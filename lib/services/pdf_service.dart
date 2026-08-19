@@ -1,0 +1,809 @@
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import '../config/constants.dart';
+import '../core/utils.dart';
+import '../models/guest_visit.dart';
+import '../services/notification_service.dart';
+import '../utils/file_saver_helper.dart';
+
+class PdfService {
+  static Uint8List? _cachedLogoBytes;
+
+  static String formatPdfCurrency(double amount) {
+    final formatter = NumberFormat('#,##,##0', 'en_IN');
+    return 'Rs. ${formatter.format(amount)}';
+  }
+
+  // Helper to load and cache logo bytes once in memory for instant PDF rendering
+  static Future<pw.MemoryImage?> _getLogoImage() async {
+    try {
+      if (_cachedLogoBytes == null) {
+        final ByteData logoData = await rootBundle.load('assets/full_mkc_logo.png');
+        _cachedLogoBytes = logoData.buffer.asUint8List();
+      }
+      return pw.MemoryImage(_cachedLogoBytes!);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Interactive Print or Download Option Modal Dialog (Instant Pre-generated)
+  static void showPrintOrDownloadDialog(BuildContext context, GuestVisit visit) {
+    // Start pre-generating PDF in the background immediately
+    Uint8List? pregeneratedPdfBytes;
+    bool isGeneratingInBackground = true;
+
+    generateGuestReceipt(visit).then((bytes) {
+      pregeneratedPdfBytes = bytes;
+      isGeneratingInBackground = false;
+    }).catchError((_) {
+      isGeneratingInBackground = false;
+    });
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isProcessing = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.print_rounded, color: AppColors.primary, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Guest Receipt Options',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          'Choose action for formatted PDF receipt',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.normal),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Guest: ${visit.guestName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 4),
+                        Text('Place: ${visit.place} | Purpose: ${visit.purpose}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        if (visit.donationAmount > 0) ...[
+                          const SizedBox(height: 4),
+                          Text('Donation: ${AppUtils.formatCurrency(visit.donationAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Select Format Action:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 10),
+
+                  // Option 1: Direct Print
+                  InkWell(
+                    onTap: isProcessing
+                        ? null
+                        : () async {
+                            setModalState(() => isProcessing = true);
+                            try {
+                              final pdfBytes = pregeneratedPdfBytes ?? await generateGuestReceipt(visit);
+                              await Printing.layoutPdf(
+                                onLayout: (_) async => pdfBytes,
+                                name: 'Receipt-${visit.guestName.replaceAll(' ', '_')}',
+                              );
+                              if (context.mounted) Navigator.pop(ctx);
+                            } catch (e) {
+                              if (context.mounted) AppUtils.showSnackBar(context, 'Printing failed: $e', isError: true);
+                            } finally {
+                              if (context.mounted) setModalState(() => isProcessing = false);
+                            }
+                          },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFA7F3D0), width: 1.2),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.print_rounded, color: Color(0xFF059669), size: 22),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Print PDF Receipt', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF065F46), fontSize: 13)),
+                                Text('Send directly to printer or browser print preview', style: TextStyle(fontSize: 11, color: Color(0xFF047857))),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF059669)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Option 2: Download PDF File (Instant)
+                  InkWell(
+                    onTap: isProcessing
+                        ? null
+                        : () async {
+                            setModalState(() => isProcessing = true);
+                            try {
+                              final pdfBytes = pregeneratedPdfBytes ?? await generateGuestReceipt(visit);
+                              final cleanName = visit.guestName.replaceAll(RegExp(r'[^\w\s\-]'), '').replaceAll(' ', '_');
+                              final filename = 'Guest_Receipt_${cleanName}_${visit.id.substring(0, math.min(6, visit.id.length))}.pdf';
+
+                              await FileSaverHelper.downloadFile(
+                                bytes: pdfBytes,
+                                filename: filename,
+                                mimeType: 'application/pdf',
+                              );
+                              if (context.mounted) {
+                                Navigator.pop(ctx);
+                                NotificationService.notifyFileAction(
+                                  context,
+                                  actionLabel: 'downloaded',
+                                  filename: filename,
+                                  isSuccess: true,
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                NotificationService.notifyFileAction(
+                                  context,
+                                  actionLabel: 'download',
+                                  filename: 'PDF Receipt',
+                                  isSuccess: false,
+                                  errorMessage: e.toString(),
+                                );
+                              }
+                            } finally {
+                              if (context.mounted) setModalState(() => isProcessing = false);
+                            }
+                          },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.download_rounded, color: Color(0xFF2563EB), size: 22),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Download PDF File', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E40AF), fontSize: 13)),
+                                Text('Save PDF document file directly to your device storage', style: TextStyle(fontSize: 11, color: Color(0xFF1D4ED8))),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF2563EB)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isProcessing ? null : () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  static Future<Uint8List> generateGuestReceipt(GuestVisit visit) async {
+    final pdf = pw.Document();
+    final primaryColor = PdfColor.fromHex('#059669');
+
+    final logoImage = await _getLogoImage();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header with Logo
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      if (logoImage != null)
+                        pw.Image(logoImage, height: 45, fit: pw.BoxFit.contain)
+                      else
+                        pw.Text(
+                          'MARKAZ KNOWLEDGE CITY',
+                          style: pw.TextStyle(
+                            fontSize: 16,
+                            fontWeight: pw.FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'CITY GUEST RELATION MANAGEMENT',
+                        style: pw.TextStyle(
+                          fontSize: 11,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.Text(
+                        'GUEST VISIT SUMMARY RECEIPT',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColor.fromHex('#ECFDF5'),
+                          border: pw.Border.all(color: primaryColor, width: 1),
+                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                        ),
+                        child: pw.Text(
+                          'DATE: ${AppUtils.formatDate(visit.createdAt)}',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: primaryColor),
+                        ),
+                      ),
+                      if (visit.receiptNo != null && visit.receiptNo!.trim().isNotEmpty) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Receipt No: ${visit.receiptNo}',
+                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey800),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 10),
+              pw.Divider(thickness: 1.5, color: primaryColor),
+              pw.SizedBox(height: 16),
+
+              // Guest Details Card Box
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#F8FAFC'),
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('GUEST INFORMATION', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                    pw.SizedBox(height: 8),
+                    _buildPdfRow('Guest Name:', visit.guestName),
+                    _buildPdfRow('Phone Number:', visit.phoneNumber.isNotEmpty ? visit.phoneNumber : '-'),
+                    if (visit.occupation != null && visit.occupation!.trim().isNotEmpty)
+                      _buildPdfRow('Occupation:', visit.occupation!),
+                    _buildPdfRow('Address / Place:', visit.place),
+                    _buildPdfRow(
+                      'Location:',
+                      visit.isInternational
+                          ? (visit.country ?? 'International')
+                          : '${visit.district}, ${visit.state ?? ''}',
+                    ),
+                    _buildPdfRow('Purpose of Visit:', visit.purpose),
+                    if (visit.donationAmount > 0)
+                      _buildPdfRow('Donation Amount:', formatPdfCurrency(visit.donationAmount)),
+                    _buildPdfRow('Handled By:', (visit.handledBy != null && visit.handledBy!.isNotEmpty) ? visit.handledBy! : '-'),
+                    if (visit.remarks != null && visit.remarks!.trim().isNotEmpty)
+                      _buildPdfRow('Remarks:', visit.remarks!),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 16),
+
+              // Visited Places Table
+              if (visit.visitedPlaces.isNotEmpty) ...[
+                pw.Text(
+                  'VISITED PLACES DETAIL',
+                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                ),
+                pw.SizedBox(height: 8),
+                pw.TableHelper.fromTextArray(
+                  headers: ['#', 'Place Name', 'Visit Date', 'Time In', 'Time Out'],
+                  data: visit.visitedPlaces.asMap().entries.map((e) {
+                    final idx = e.key + 1;
+                    final vp = e.value;
+                    return [
+                      '$idx',
+                      vp.visitedPlace,
+                      vp.visitDate ?? '-',
+                      vp.timeIn ?? '-',
+                      vp.timeOut ?? '-'
+                    ];
+                  }).toList(),
+                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                  headerDecoration: pw.BoxDecoration(color: primaryColor),
+                  rowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                  cellAlignment: pw.Alignment.centerLeft,
+                  cellStyle: const pw.TextStyle(fontSize: 9),
+                  border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+                ),
+              ],
+
+              pw.Spacer(),
+
+              // Footer Signatures & System Stamp
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Authorized Signature', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                      pw.SizedBox(height: 35),
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey800),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text('Markaz Knowledge City - City Guest System', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text('Verified Official Digital Receipt', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  // Generate Admin Performance PDF (Matching Website PDF Format with Logo & Clean Currency)
+  static Future<Uint8List> generateAdminPerformancePdf({
+    required String reportTitle,
+    required List<Map<String, dynamic>> rows,
+    required String roleLabel,
+  }) async {
+    final pdf = pw.Document();
+    final todayStr = DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now());
+    final primaryColor = PdfColor.fromHex('#059669');
+
+    // Try loading logo image
+    pw.MemoryImage? logoImage;
+    try {
+      final ByteData logoData = await rootBundle.load('assets/full_mkc_logo.png');
+      logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+    } catch (_) {}
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            // Header with Logo
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  if (logoImage != null)
+                    pw.Image(logoImage, height: 50, fit: pw.BoxFit.contain)
+                  else
+                    pw.Text(
+                      'MARKAZ KNOWLEDGE CITY',
+                      style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                    ),
+                  pw.SizedBox(height: 6),
+                  pw.Text(
+                    'CITY GUEST RELATION MANAGEMENT SYSTEM',
+                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    reportTitle.toUpperCase(),
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Text('Generated On: $todayStr', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Divider(thickness: 1.5, color: primaryColor),
+            pw.SizedBox(height: 16),
+
+            // Performance Leaderboard Table
+            pw.TableHelper.fromTextArray(
+              headers: ['#', '$roleLabel Name', 'Total Entries', 'Total Donations (INR)', 'Last Entry'],
+              data: rows.asMap().entries.map((e) {
+                final idx = e.key + 1;
+                final r = e.value;
+                final double don = ((r['totalDonations'] ?? 0) as num).toDouble();
+                final String lastRaw = r['lastEntry']?.toString() ?? '';
+                final String lastStr = lastRaw.isNotEmpty
+                    ? DateFormat('dd/MM/yyyy').format(DateTime.parse(lastRaw).toLocal())
+                    : '—';
+
+                return [
+                  '$idx',
+                  r['name'] ?? 'User',
+                  '${r['totalEntries']} guests',
+                  formatPdfCurrency(don),
+                  lastStr,
+                ];
+              }).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 11),
+              headerDecoration: pw.BoxDecoration(color: primaryColor),
+              rowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellAlignment: pw.Alignment.centerLeft,
+              cellStyle: const pw.TextStyle(fontSize: 10),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            ),
+
+            pw.SizedBox(height: 24),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Report Summary Total Admins: ${rows.length}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                pw.Text('Page 1 of 1', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+              ],
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  // Generate Event Performance PDF
+  static Future<Uint8List> generateEventReportPdf({
+    required String reportTitle,
+    required List<Map<String, dynamic>> events,
+  }) async {
+    final pdf = pw.Document();
+    final todayStr = DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now());
+    final primaryColor = PdfColor.fromHex('#D97706'); // Amber/Orange
+
+    pw.MemoryImage? logoImage;
+    try {
+      final ByteData logoData = await rootBundle.load('assets/full_mkc_logo.png');
+      logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+    } catch (_) {}
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  if (logoImage != null)
+                    pw.Image(logoImage, height: 50, fit: pw.BoxFit.contain)
+                  else
+                    pw.Text(
+                      'MARKAZ KNOWLEDGE CITY',
+                      style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                    ),
+                  pw.SizedBox(height: 6),
+                  pw.Text(
+                    'CITY GUEST RELATION MANAGEMENT SYSTEM',
+                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    reportTitle.toUpperCase(),
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Text('Generated On: $todayStr', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Divider(thickness: 1.5, color: primaryColor),
+            pw.SizedBox(height: 16),
+
+            pw.TableHelper.fromTextArray(
+              headers: ['#', 'Event Name', 'Location / Place', 'Attendees', 'Event Date', 'Handled By'],
+              data: events.asMap().entries.map((e) {
+                final idx = e.key + 1;
+                final ev = e.value;
+                final String dateRaw = ev['event_date']?.toString() ?? ev['created_at']?.toString() ?? '';
+                final String dateStr = dateRaw.isNotEmpty
+                    ? DateFormat('dd/MM/yyyy').format(DateTime.parse(dateRaw).toLocal())
+                    : '-';
+
+                return [
+                  '$idx',
+                  ev['event_name'] ?? 'Event',
+                  ev['event_place'] ?? 'Main Campus',
+                  '${ev['members_count'] ?? 1} members',
+                  dateStr,
+                  ev['handled_by'] ?? '-',
+                ];
+              }).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 11),
+              headerDecoration: pw.BoxDecoration(color: primaryColor),
+              rowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellAlignment: pw.Alignment.centerLeft,
+              cellStyle: const pw.TextStyle(fontSize: 10),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            ),
+
+            pw.SizedBox(height: 24),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Total Events: ${events.length}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                pw.Text('Page 1 of 1', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+              ],
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  static Future<void> exportAdminPerformancePdf({
+    required String reportTitle,
+    required List<Map<String, dynamic>> rows,
+    required String roleLabel,
+  }) async {
+    final pdfBytes = await generateAdminPerformancePdf(
+      reportTitle: reportTitle,
+      rows: rows,
+      roleLabel: roleLabel,
+    );
+    await Printing.sharePdf(bytes: pdfBytes, filename: '${roleLabel.toLowerCase()}-performance-report.pdf');
+  }
+
+  static Future<void> exportEventReportPdf({
+    required String reportTitle,
+    required List<Map<String, dynamic>> events,
+  }) async {
+    final pdfBytes = await generateEventReportPdf(
+      reportTitle: reportTitle,
+      events: events,
+    );
+    await Printing.sharePdf(bytes: pdfBytes, filename: 'events-analytics-report.pdf');
+  }
+
+  static Future<void> printReceipt(GuestVisit visit) async {
+    final pdfBytes = await generateGuestReceipt(visit);
+    await Printing.layoutPdf(onLayout: (_) => pdfBytes);
+  }
+
+  // Generate Guest Records Complete PDF (Matching Website Landscape Format with Dynamic Selected Columns)
+  static Future<Uint8List> generateGuestRecordsPdf({
+    required String reportTitle,
+    required List<GuestVisit> guests,
+    required List<String> selectedColumns,
+  }) async {
+    final pdf = pw.Document();
+    final todayStr = DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now());
+    final primaryColor = PdfColor.fromHex('#059669');
+
+    pw.MemoryImage? logoImage;
+    try {
+      final ByteData logoData = await rootBundle.load('assets/full_mkc_logo.png');
+      logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+    } catch (_) {}
+
+    final Map<String, String> columnHeaders = {
+      'name': 'Guest Name',
+      'phone': 'Phone Number',
+      'occupation': 'Occupation',
+      'place': 'Address / Place',
+      'district': 'District',
+      'state': 'State',
+      'country': 'Country',
+      'purpose': 'Purpose',
+      'donation': 'Donation (Rs.)',
+      'receipt': 'Receipt No',
+      'handled_by': 'Handled By',
+      'remarks': 'Remarks',
+      'date': 'Date Entered',
+    };
+
+    final headers = ['#', ...selectedColumns.map((col) => columnHeaders[col] ?? col)];
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(24),
+        header: (pw.Context context) {
+          return pw.Column(
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  if (logoImage != null)
+                    pw.Image(logoImage, height: 32, fit: pw.BoxFit.contain)
+                  else
+                    pw.Text(
+                      'MARKAZ KNOWLEDGE CITY',
+                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                    ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        'CITY GUEST RELATION MANAGEMENT SYSTEM',
+                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                      ),
+                      pw.Text(
+                        reportTitle.toUpperCase(),
+                        style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 6),
+              pw.Divider(thickness: 1, color: primaryColor),
+              pw.SizedBox(height: 8),
+            ],
+          );
+        },
+        footer: (pw.Context context) {
+          return pw.Container(
+            margin: const pw.EdgeInsets.only(top: 8),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Generated On: $todayStr | Total Records: ${guests.length}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+              ],
+            ),
+          );
+        },
+        build: (pw.Context context) {
+          return [
+            pw.TableHelper.fromTextArray(
+              headers: headers,
+              data: guests.asMap().entries.map((e) {
+                final idx = e.key + 1;
+                final g = e.value;
+                final row = <String>['$idx'];
+
+                for (final col in selectedColumns) {
+                  switch (col) {
+                    case 'name':
+                      row.add(g.guestName);
+                      break;
+                    case 'phone':
+                      row.add(g.phoneNumber.isNotEmpty ? g.phoneNumber : '-');
+                      break;
+                    case 'occupation':
+                      row.add((g.occupation != null && g.occupation!.isNotEmpty) ? g.occupation! : '-');
+                      break;
+                    case 'place':
+                      row.add(g.place);
+                      break;
+                    case 'district':
+                      row.add(g.district);
+                      break;
+                    case 'state':
+                      row.add((g.state != null && g.state!.isNotEmpty) ? g.state! : '-');
+                      break;
+                    case 'country':
+                      row.add((g.country != null && g.country!.isNotEmpty) ? g.country! : '-');
+                      break;
+                    case 'purpose':
+                      row.add(g.purpose);
+                      break;
+                    case 'donation':
+                      row.add(g.donationAmount > 0 ? NumberFormat('#,##,##0', 'en_IN').format(g.donationAmount) : '-');
+                      break;
+                    case 'receipt':
+                      row.add((g.receiptNo != null && g.receiptNo!.trim().isNotEmpty) ? g.receiptNo!.trim() : '-');
+                      break;
+                    case 'handled_by':
+                      row.add((g.handledBy != null && g.handledBy!.trim().isNotEmpty) ? g.handledBy!.trim() : '-');
+                      break;
+                    case 'remarks':
+                      row.add((g.remarks != null && g.remarks!.trim().isNotEmpty) ? g.remarks!.trim() : '-');
+                      break;
+                    case 'date':
+                      row.add(AppUtils.formatDate(g.createdAt));
+                      break;
+                    default:
+                      row.add('-');
+                  }
+                }
+                return row;
+              }).toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 8),
+              headerDecoration: pw.BoxDecoration(color: primaryColor),
+              rowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellAlignment: pw.Alignment.centerLeft,
+              cellStyle: const pw.TextStyle(fontSize: 7.5),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+}
+
+pw.Widget _buildPdfRow(String label, String value) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+    child: pw.Row(
+      children: [
+        pw.SizedBox(
+          width: 130,
+          child: pw.Text(label, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Expanded(child: pw.Text(value)),
+      ],
+    ),
+  );
+}
