@@ -32,6 +32,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/full_mkc_logo.png
-    - assets/logo.png
-    - assets/mkc_logo.png
     - assets/hero.png
