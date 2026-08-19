@@ -22,12 +22,14 @@ subprojects {
 subprojects {
     val subproject = this
     subproject.plugins.withId("com.android.library") {
-        val android = subproject.extensions.getByType(com.android.build.gradle.LibraryExtension::class.java)
-        android.compileSdkVersion(36)
+        subproject.extensions.configure<com.android.build.gradle.LibraryExtension> {
+            compileSdk = 36
+        }
     }
     subproject.plugins.withId("com.android.application") {
-        val android = subproject.extensions.getByType(com.android.build.gradle.AppExtension::class.java)
-        android.compileSdkVersion(36)
+        subproject.extensions.configure<com.android.build.gradle.AppExtension> {
+            compileSdk = 36
+        }
     }
 }
 
