@@ -55,12 +55,16 @@ class _DashboardViewState extends State<DashboardView> {
     Color(0xFF8B5CF6),
   ];
 
+  List<Map<String, dynamic>> _cachedFilteredGuests = [];
+  List<Map<String, dynamic>> _cachedFilteredEvents = [];
+  List<Map<String, dynamic>> _cachedAdminPerformance = [];
+
   @override
   void initState() {
     super.initState();
     _loadStats();
     _subscribeRealtime();
-    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _loadStatsSilent());
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) => _loadStatsSilent());
   }
 
   @override
@@ -95,6 +99,7 @@ class _DashboardViewState extends State<DashboardView> {
         _stats = stats;
         _todayGuestsList = todayList;
         _isLoading = false;
+        _updateCachedCalculations();
       });
     }
   }
@@ -106,15 +111,28 @@ class _DashboardViewState extends State<DashboardView> {
     final todayList = await GuestService.getTodayGuests(isSuperAdmin);
     
     if (mounted) {
-      setState(() {
-        _stats = stats;
-        _todayGuestsList = todayList;
-      });
+      if (stats.toString() != _stats.toString() || todayList.length != _todayGuestsList.length) {
+        setState(() {
+          _stats = stats;
+          _todayGuestsList = todayList;
+          _updateCachedCalculations();
+        });
+      }
     }
   }
 
+  void _updateCachedCalculations() {
+    _cachedFilteredGuests = _calculateFilteredGuests();
+    _cachedFilteredEvents = _calculateFilteredEvents();
+    _cachedAdminPerformance = _calculateAdminPerformanceList();
+  }
+
+  List<Map<String, dynamic>> _getFilteredGuests() => _cachedFilteredGuests;
+  List<Map<String, dynamic>> _getFilteredEvents() => _cachedFilteredEvents;
+  List<Map<String, dynamic>> _calculateAdminPerformance() => _cachedAdminPerformance;
+
   // Filter raw guests based on selected time period dropdown
-  List<Map<String, dynamic>> _getFilteredGuests() {
+  List<Map<String, dynamic>> _calculateFilteredGuests() {
     final List<Map<String, dynamic>> raw = List<Map<String, dynamic>>.from(_stats['rawGuests'] ?? []);
     if (_dateFilter == 'all') return raw;
 
@@ -150,7 +168,7 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   // Filter raw events based on selected event date filter
-  List<Map<String, dynamic>> _getFilteredEvents() {
+  List<Map<String, dynamic>> _calculateFilteredEvents() {
     final List<Map<String, dynamic>> raw = List<Map<String, dynamic>>.from(_stats['rawEvents'] ?? []);
     if (_eventDateFilter == 'all') return raw;
 
@@ -195,8 +213,8 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   // Calculate local admin performance for Sub Admin (0), Super Admin (1), or All Admins (2)
-  List<Map<String, dynamic>> _calculateAdminPerformance() {
-    final List<Map<String, dynamic>> filteredGuests = _getFilteredGuests();
+  List<Map<String, dynamic>> _calculateAdminPerformanceList() {
+    final List<Map<String, dynamic>> filteredGuests = _cachedFilteredGuests;
     final List<Map<String, dynamic>> allUsers = List<Map<String, dynamic>>.from(_stats['allUsers'] ?? []);
 
     List<Map<String, dynamic>> roleUsers = [];
@@ -293,6 +311,7 @@ class _DashboardViewState extends State<DashboardView> {
                   final isMobile = constraints.maxWidth < 600;
 
                   return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                     padding: EdgeInsets.fromLTRB(
                       isMobile ? 14 : 24,
                       isMobile ? 14 : 24,
@@ -1043,6 +1062,8 @@ class _DashboardViewState extends State<DashboardView> {
                               child: Image.network(
                                 photoUrl,
                                 fit: BoxFit.cover,
+                                cacheWidth: 200,
+                                cacheHeight: 200,
                                 errorBuilder: (context, error, stackTrace) => Container(
                                   color: AppColors.primary.withValues(alpha: 0.1),
                                   child: const Icon(Icons.person, color: AppColors.primary),
@@ -1886,9 +1907,24 @@ class _DashboardViewState extends State<DashboardView> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildTabButton('👤 Sub Admin', _selectedPerfTab == 0, () => setState(() => _selectedPerfTab = 0)),
-                        _buildTabButton('👑 Super Admin', _selectedPerfTab == 1, () => setState(() => _selectedPerfTab = 1)),
-                        _buildTabButton('📊 All Admins', _selectedPerfTab == 2, () => setState(() => _selectedPerfTab = 2)),
+                        _buildTabButton('👤 Sub Admin', _selectedPerfTab == 0, () {
+                          setState(() {
+                            _selectedPerfTab = 0;
+                            _updateCachedCalculations();
+                          });
+                        }),
+                        _buildTabButton('👑 Super Admin', _selectedPerfTab == 1, () {
+                          setState(() {
+                            _selectedPerfTab = 1;
+                            _updateCachedCalculations();
+                          });
+                        }),
+                        _buildTabButton('📊 All Admins', _selectedPerfTab == 2, () {
+                          setState(() {
+                            _selectedPerfTab = 2;
+                            _updateCachedCalculations();
+                          });
+                        }),
                       ],
                     ),
                   ),
@@ -1915,7 +1951,10 @@ class _DashboardViewState extends State<DashboardView> {
                       ],
                       onChanged: (val) {
                         if (val != null) {
-                          setState(() => _dateFilter = val);
+                          setState(() {
+                            _dateFilter = val;
+                            _updateCachedCalculations();
+                          });
                           if (val == 'custom') _selectCustomDateRange();
                         }
                       },
