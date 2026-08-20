@@ -159,6 +159,32 @@ class AssignmentService {
     });
   }
 
+  // Update Assignment Details (Super Admin)
+  static Future<void> updateAssignmentDetails({
+    required String id,
+    required String guestName,
+    String? notes,
+    required String assignedTo,
+    required bool isUrgent,
+  }) async {
+    await _client.from('guest_assignments').update({
+      'guest_name': guestName.trim(),
+      'notes': notes?.trim(),
+      'assigned_to': assignedTo,
+      'is_urgent': isUrgent,
+    }).eq('id', id);
+
+    // Notify Sub Admin of updated assignment
+    await _client.from('app_notifications').insert({
+      'user_id': assignedTo,
+      'title': isUrgent ? '🚨 Updated URGENT Assignment' : '✏️ Assignment Updated',
+      'message': 'Details for guest task "$guestName" were updated by Super Admin.',
+      'type': isUrgent ? 'urgent' : 'info',
+      'is_read': false,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+  }
+
   // Delete Assignment
   static Future<void> deleteAssignment(String id) async {
     await _client.from('guest_assignments').delete().eq('id', id);

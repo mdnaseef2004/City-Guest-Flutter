@@ -433,6 +433,161 @@ class _AssignmentsViewState extends State<AssignmentsView> {
     );
   }
 
+  // Edit Assignment Dialog (Super Admin)
+  void _showEditAssignmentDialog(GuestAssignment item) {
+    final guestNameController = TextEditingController(text: item.guestName);
+    final notesController = TextEditingController(text: item.notes ?? '');
+    String selectedSubAdminId = item.assignedTo;
+    bool isUrgent = item.isUrgent;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 26),
+                  const SizedBox(width: 10),
+                  const Expanded(child: Text('Edit Task Assignment', style: TextStyle(fontWeight: FontWeight.bold))),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: guestNameController,
+                      decoration: const InputDecoration(labelText: 'Guest Name *', prefixIcon: Icon(Icons.person)),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedSubAdminId,
+                      decoration: const InputDecoration(labelText: 'Assign To (Sub Admin) *', prefixIcon: Icon(Icons.badge_outlined)),
+                      items: _subAdmins.map((u) {
+                        return DropdownMenuItem(value: u.id, child: Text(u.name));
+                      }).toList(),
+                      onChanged: (val) => setDialogState(() => selectedSubAdminId = val ?? selectedSubAdminId),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: notesController,
+                      decoration: const InputDecoration(labelText: 'Notes / Instructions', prefixIcon: Icon(Icons.description_outlined)),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Mark as Urgent 🚨', style: TextStyle(fontWeight: FontWeight.bold)),
+                      value: isUrgent,
+                      onChanged: (val) => setDialogState(() => isUrgent = val ?? false),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final newName = guestNameController.text.trim();
+                    if (newName.isEmpty) {
+                      AppUtils.showSnackBar(ctx, 'Guest Name is required!', isError: true);
+                      return;
+                    }
+
+                    await AssignmentService.updateAssignmentDetails(
+                      id: item.id,
+                      guestName: newName,
+                      notes: notesController.text.trim(),
+                      assignedTo: selectedSubAdminId,
+                      isUrgent: isUrgent,
+                    );
+
+                    if (mounted) {
+                      Navigator.pop(ctx);
+                      NotificationService.showNotificationPopup(
+                        context,
+                        title: 'Assignment Updated ✏️',
+                        message: 'Task details for "$newName" have been updated.',
+                        icon: Icons.edit_rounded,
+                      );
+                      _loadData();
+                    }
+                  },
+                  icon: const Icon(Icons.save_rounded, size: 16),
+                  label: const Text('Save Changes'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Delete Assignment Confirmation Dialog (Super Admin)
+  void _showDeleteAssignmentDialog(GuestAssignment item) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 26),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Delete Task Assignment',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to delete the assignment for "${item.guestName}"?',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'This action cannot be undone.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await AssignmentService.deleteAssignment(item.id);
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  AppUtils.showSnackBar(
+                    context,
+                    'Assignment for "${item.guestName}" deleted',
+                    isError: true,
+                    icon: Icons.delete_sweep_rounded,
+                  );
+                  _loadData();
+                }
+              },
+              icon: const Icon(Icons.delete_forever_rounded, size: 18),
+              label: const Text('Delete Assignment'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, foregroundColor: Colors.white),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSuperAdmin = Provider.of<AuthProvider>(context).isSuperAdmin;
@@ -549,7 +704,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Top Row: Guest Name, Urgent Badge, Status Badge
+                              // Top Row: Guest Name, Urgent Badge, Super Admin Edit/Delete Actions
                               Row(
                                 children: [
                                   CircleAvatar(
@@ -588,6 +743,24 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                                       ],
                                     ),
                                   ),
+                                  // Super Admin Edit & Delete buttons (available before completing)
+                                  if (isSuperAdmin && !isCompleted) ...[
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: Colors.orange, size: 20),
+                                      onPressed: () => _showEditAssignmentDialog(item),
+                                      tooltip: 'Edit Assignment',
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.all(4),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                      onPressed: () => _showDeleteAssignmentDialog(item),
+                                      tooltip: 'Delete Assignment',
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.all(4),
+                                    ),
+                                  ],
                                 ],
                               ),
                               if (item.notes != null && item.notes!.isNotEmpty) ...[
