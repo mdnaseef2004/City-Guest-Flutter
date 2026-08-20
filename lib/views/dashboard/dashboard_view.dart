@@ -293,7 +293,12 @@ class _DashboardViewState extends State<DashboardView> {
                   final isMobile = constraints.maxWidth < 600;
 
                   return SingleChildScrollView(
-                    padding: EdgeInsets.all(isMobile ? 14 : 24),
+                    padding: EdgeInsets.fromLTRB(
+                      isMobile ? 14 : 24,
+                      isMobile ? 14 : 24,
+                      isMobile ? 14 : 24,
+                      isMobile ? 100 : 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

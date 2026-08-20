@@ -212,7 +212,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

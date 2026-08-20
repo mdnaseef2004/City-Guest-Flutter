@@ -468,6 +468,7 @@ class _AddGuestViewState extends State<AddGuestView> {
                   ),
                 ],
               ),
+              const SizedBox(height: 100),
             ],
           ),
         ),

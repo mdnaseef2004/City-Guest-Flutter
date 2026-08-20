@@ -467,10 +467,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(left: 14, right: 14, bottom: 18, top: 4),
-      height: 66,
+      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 18, top: 4),
+      height: 60,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(36),
+        borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
@@ -478,17 +478,17 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               gradient: LinearGradient(
                 colors: isDark
                     ? [
-                        const Color(0xFF1E293B).withValues(alpha: 0.78),
-                        const Color(0xFF0F172A).withValues(alpha: 0.72),
+                        const Color(0xFF1E293B).withValues(alpha: 0.82),
+                        const Color(0xFF0F172A).withValues(alpha: 0.78),
                       ]
                     : [
-                        Colors.white.withValues(alpha: 0.78),
-                        const Color(0xFFD1FAE5).withValues(alpha: 0.68),
+                        Colors.white.withValues(alpha: 0.82),
+                        const Color(0xFFD1FAE5).withValues(alpha: 0.72),
                       ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(36),
+              borderRadius: BorderRadius.circular(32),
               border: Border.all(
                 color: isDark
                     ? const Color(0xFF334155).withValues(alpha: 0.8)
@@ -510,13 +510,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               child: Stack(
                 children: [
-                  // Smooth Gliding Liquid Indicator Pill Background
+                  // Smooth Gliding Liquid Indicator Pill Background (Icon-only proportion)
                   AnimatedAlign(
-                    duration: const Duration(milliseconds: 350),
+                    duration: const Duration(milliseconds: 320),
                     curve: Curves.easeOutBack,
                     alignment: Alignment(-1.0 + (activeIndex * (2.0 / 3.0)), 0.0),
                     child: FractionallySizedBox(
-                      widthFactor: 0.28,
+                      widthFactor: 0.23,
                       heightFactor: 1.0,
                       child: Container(
                         decoration: BoxDecoration(
@@ -525,7 +525,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(28),
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: const [
                             BoxShadow(
                               color: Color(0x50047857),
@@ -538,7 +538,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     ),
                   ),
 
-                  // Interactive Tab Items Layer
+                  // Interactive Pure Icon Layer (No text labels)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: List.generate(mobileIndices.length, (index) {
@@ -546,44 +546,26 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                       final item = navItems[mobileIndices[index]];
 
                       return Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedIndex = mobileIndices[index];
-                            });
-                          },
-                          behavior: HitTestBehavior.opaque,
-                          child: Center(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
-                              child: Row(
-                                key: ValueKey<bool>(isSelected),
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isSelected ? item.activeIcon : item.icon,
-                                    size: 20,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF047857)),
-                                  ),
-                                  if (isSelected) ...[
-                                    const SizedBox(width: 5),
-                                    Flexible(
-                                      child: Text(
-                                        item.title,
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 11.5,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                        child: Tooltip(
+                          message: item.title,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedIndex = mobileIndices[index];
+                              });
+                            },
+                            behavior: HitTestBehavior.opaque,
+                            child: Center(
+                              child: AnimatedScale(
+                                duration: const Duration(milliseconds: 200),
+                                scale: isSelected ? 1.15 : 1.0,
+                                child: Icon(
+                                  isSelected ? item.activeIcon : item.icon,
+                                  size: 24,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF047857)),
+                                ),
                               ),
                             ),
                           ),
