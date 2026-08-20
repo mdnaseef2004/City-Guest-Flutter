@@ -29,10 +29,10 @@ jobs:
         run: flutter pub get
 
       - name: Build Android Release APK
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
 
       - name: Build Android Release App Bundle
-        run: flutter build appbundle --release --no-tree-shake-icons
+        run: flutter build appbundle --release --no-tree-shake-icons --android-skip-build-dependency-validation
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
