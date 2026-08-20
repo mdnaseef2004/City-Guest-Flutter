@@ -146,35 +146,93 @@ class _AssignmentsViewState extends State<AssignmentsView> {
   @override
   Widget build(BuildContext context) {
     final isSuperAdmin = Provider.of<AuthProvider>(context).isSuperAdmin;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Guest Task Assignments'),
         actions: [
+          ElevatedButton.icon(
+            onPressed: _showNewAssignmentDialog,
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 6),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+          const SizedBox(width: 6),
         ],
       ),
-      floatingActionButton: isSuperAdmin
-          ? FloatingActionButton.extended(
-              onPressed: _showNewAssignmentDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('New Assignment'),
-              backgroundColor: AppColors.primary,
-            )
-          : null,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 75),
+        child: FloatingActionButton.extended(
+          onPressed: _showNewAssignmentDialog,
+          icon: const Icon(Icons.add),
+          label: const Text('New Assignment', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: AppColors.primary,
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _assignments.isEmpty
-              ? const Center(child: Text('No guest assignments found.', style: TextStyle(color: AppColors.textSecondary)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.assignment_ind_outlined, size: 64, color: AppColors.primary),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No guest assignments found.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Assign tasks and follow-ups to admin team members.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _showNewAssignmentDialog,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Assign New Task', style: TextStyle(fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF059669),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : RefreshIndicator(
                   onRefresh: _loadData,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     itemCount: _assignments.length,
                     itemBuilder: (context, index) {
                       final item = _assignments[index];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), width: 1),
+                        ),
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: item.isUrgent ? AppColors.danger : AppColors.primary,
@@ -199,12 +257,14 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                               if (item.notes != null && item.notes!.isNotEmpty) Text('Notes: ${item.notes}'),
                               Text(
                                 'Assigned To: ${item.assignedToName ?? "Sub Admin"} | Status: ${item.status.toUpperCase()}',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                               ),
                             ],
                           ),
                           trailing: DropdownButton<String>(
                             value: item.status,
+                            dropdownColor: Theme.of(context).colorScheme.surface,
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.bold),
                             items: const [
                               DropdownMenuItem(value: 'pending', child: Text('Pending')),
                               DropdownMenuItem(value: 'in_progress', child: Text('In Progress')),
