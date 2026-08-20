@@ -252,51 +252,137 @@ class _UserManagementViewState extends State<UserManagementView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Management Panel'),
         actions: [
+          ElevatedButton.icon(
+            onPressed: _openCreateUserDialog,
+            icon: const Icon(Icons.person_add, size: 16),
+            label: const Text('Add User', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 6),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadUsers),
+          const SizedBox(width: 6),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreateUserDialog,
-        icon: const Icon(Icons.person_add),
-        label: const Text('Add Sub Admin'),
-        backgroundColor: AppColors.primary,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 75),
+        child: FloatingActionButton.extended(
+          onPressed: _openCreateUserDialog,
+          icon: const Icon(Icons.person_add),
+          label: const Text('Add Sub Admin', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: AppColors.primary,
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: _users.length,
               itemBuilder: (context, index) {
                 final u = _users[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: u.isSuperAdmin ? AppColors.primary : AppColors.accent,
-                      child: Text(u.name.isNotEmpty ? u.name[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white)),
-                    ),
-                    title: Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${u.email}\nRole: ${u.role.toUpperCase()} | Status: ${u.isActive ? "ACTIVE" : "DISABLED"}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), width: 1),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, color: Colors.orange, size: 20),
-                          onPressed: () => _openEditUserDialog(u),
-                          tooltip: 'Edit User',
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: u.isSuperAdmin ? const Color(0xFF059669) : const Color(0xFF4F46E5),
+                              child: Text(
+                                u.name.isNotEmpty ? u.name[0].toUpperCase() : 'U',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    u.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    u.email,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: u.isActive,
+                              activeThumbColor: const Color(0xFF059669),
+                              onChanged: (val) => _toggleUserActive(u),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                          onPressed: () => _deleteUser(u),
-                          tooltip: 'Delete User Account',
-                        ),
-                        Switch(
-                          value: u.isActive,
-                          onChanged: (val) => _toggleUserActive(u),
+                        const Divider(height: 18),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: u.isSuperAdmin
+                                    ? const Color(0xFF059669).withValues(alpha: 0.15)
+                                    : const Color(0xFF4F46E5).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${u.role.toUpperCase()}  •  ${u.isActive ? "ACTIVE" : "DISABLED"}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: u.isSuperAdmin ? const Color(0xFF059669) : const Color(0xFF4F46E5),
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, color: Colors.orange, size: 20),
+                                  onPressed: () => _openEditUserDialog(u),
+                                  tooltip: 'Edit User',
+                                  constraints: const BoxConstraints(),
+                                  padding: const EdgeInsets.all(6),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                  onPressed: () => _deleteUser(u),
+                                  tooltip: 'Delete User Account',
+                                  constraints: const BoxConstraints(),
+                                  padding: const EdgeInsets.all(6),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
