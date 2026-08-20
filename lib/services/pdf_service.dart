@@ -481,7 +481,7 @@ class PdfService {
                 final String lastRaw = r['lastEntry']?.toString() ?? '';
                 final String lastStr = lastRaw.isNotEmpty
                     ? DateFormat('dd/MM/yyyy').format(DateTime.parse(lastRaw).toLocal())
-                    : '—';
+                    : 'N/A';
 
                 return [
                   '$idx',
