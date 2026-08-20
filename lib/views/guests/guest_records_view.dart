@@ -903,8 +903,11 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                 width: calcWidth,
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                                  color: Theme.of(context).colorScheme.surface,
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                    width: 1.2,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: DropdownButtonHideUnderline(
@@ -912,13 +915,18 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                     value: guestProvider.selectedCreatedBy,
                                     isDense: true,
                                     isExpanded: true,
+                                    dropdownColor: Theme.of(context).colorScheme.surface,
+                                    iconEnabledColor: Theme.of(context).colorScheme.onSurface,
                                     style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500),
-                                    hint: const Text('All Admins', style: TextStyle(fontSize: 12, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
+                                    hint: Text('All Admins', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis),
                                     items: [
-                                      const DropdownMenuItem<String>(value: null, child: Text('All Admins', style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+                                      DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text('All Admins', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                                      ),
                                       ..._adminUsers.map((u) => DropdownMenuItem<String>(
                                             value: u.id,
-                                            child: Text('${u.name} (${u.role == "super_admin" ? "Super" : "Sub"})', style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                                            child: Text('${u.name} (${u.role == "super_admin" ? "Super" : "Sub"})', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
                                           )),
                                     ],
                                     onChanged: (val) => guestProvider.setFilterCreatedBy(val, isSuperAdmin),
@@ -944,8 +952,11 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                           width: 130,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                            color: Theme.of(context).colorScheme.surface,
+                            border: Border.all(
+                              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                              width: 1.2,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -956,10 +967,10 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                 child: TextField(
                                   controller: _startDateController,
                                   readOnly: true,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                                  decoration: const InputDecoration(
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
+                                  decoration: InputDecoration(
                                     hintText: 'Start Date',
-                                    hintStyle: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    hintStyle: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                     border: InputBorder.none,
                                     isDense: true,
                                     contentPadding: EdgeInsets.zero,
@@ -992,8 +1003,11 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                           width: 130,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                            color: Theme.of(context).colorScheme.surface,
+                            border: Border.all(
+                              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                              width: 1.2,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -1004,10 +1018,10 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                 child: TextField(
                                   controller: _endDateController,
                                   readOnly: true,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                                  decoration: const InputDecoration(
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
+                                  decoration: InputDecoration(
                                     hintText: 'End Date',
-                                    hintStyle: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    hintStyle: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                     border: InputBorder.none,
                                     isDense: true,
                                     contentPadding: EdgeInsets.zero,
@@ -1188,13 +1202,19 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
     required ValueChanged<String?> onChanged,
     double? width,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final hintColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1);
+
     return Container(
       height: 40,
       width: width ?? 200,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+        color: surfaceColor,
+        border: Border.all(color: borderColor, width: 1.2),
         borderRadius: BorderRadius.circular(8),
         boxShadow: const [
           BoxShadow(
@@ -1209,11 +1229,19 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
           value: value,
           isDense: true,
           isExpanded: true,
-          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500),
-          hint: Text(hint, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
+          dropdownColor: surfaceColor,
+          iconEnabledColor: textColor,
+          style: TextStyle(fontSize: 12, color: textColor, fontWeight: FontWeight.w500),
+          hint: Text(hint, style: TextStyle(fontSize: 12, color: hintColor), overflow: TextOverflow.ellipsis),
           items: [
-            DropdownMenuItem<String>(value: null, child: Text(hint, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
-            ...items.map((i) => DropdownMenuItem<String>(value: i, child: Text(i, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis))),
+            DropdownMenuItem<String>(
+              value: null,
+              child: Text(hint, style: TextStyle(fontSize: 12, color: textColor), overflow: TextOverflow.ellipsis),
+            ),
+            ...items.map((i) => DropdownMenuItem<String>(
+                  value: i,
+                  child: Text(i, style: TextStyle(fontSize: 12, color: textColor), overflow: TextOverflow.ellipsis),
+                )),
           ],
           onChanged: onChanged,
         ),

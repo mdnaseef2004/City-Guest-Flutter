@@ -461,7 +461,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   Widget _buildLiquidBottomNavBar(List<NavItem> navItems) {
-    final mobileIndices = [0, 1, 4, 5];
+    final mobileIndices = [0, 1, 2, 5];
     final selectedBottomIndex = mobileIndices.indexOf(_selectedIndex);
     final activeIndex = selectedBottomIndex != -1 ? selectedBottomIndex : 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
