@@ -486,8 +486,11 @@ class _EventsViewState extends State<EventsView> {
                                     width: 130,
                                     padding: const EdgeInsets.symmetric(horizontal: 10),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                                      color: Theme.of(context).colorScheme.surface,
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                        width: 1.2,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
@@ -498,10 +501,10 @@ class _EventsViewState extends State<EventsView> {
                                           child: TextField(
                                             controller: _startDateController,
                                             readOnly: true,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                                            decoration: const InputDecoration(
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
+                                            decoration: InputDecoration(
                                               hintText: 'Start Date',
-                                              hintStyle: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                              hintStyle: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                               border: InputBorder.none,
                                               isDense: true,
                                               contentPadding: EdgeInsets.zero,
@@ -533,8 +536,11 @@ class _EventsViewState extends State<EventsView> {
                                     width: 130,
                                     padding: const EdgeInsets.symmetric(horizontal: 10),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                                      color: Theme.of(context).colorScheme.surface,
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                        width: 1.2,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
@@ -545,10 +551,10 @@ class _EventsViewState extends State<EventsView> {
                                           child: TextField(
                                             controller: _endDateController,
                                             readOnly: true,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                                            decoration: const InputDecoration(
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
+                                            decoration: InputDecoration(
                                               hintText: 'End Date',
-                                              hintStyle: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                              hintStyle: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                               border: InputBorder.none,
                                               isDense: true,
                                               contentPadding: EdgeInsets.zero,
@@ -675,7 +681,10 @@ class _EventsViewState extends State<EventsView> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+            borderSide: BorderSide(
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+              width: 1.2,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),

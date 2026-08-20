@@ -1680,14 +1680,15 @@ class _DashboardViewState extends State<DashboardView> {
                                   int index = value.toInt();
                                   if (index >= 0 && index < places.length) {
                                     String name = places[index]['place'] ?? '';
+                                    String displayName = name.length > 9 ? '${name.substring(0, 8)}…' : name;
                                     return SideTitleWidget(
                                       meta: meta,
                                       space: 4,
                                       child: Transform.rotate(
-                                        angle: -0.4,
+                                        angle: -0.3,
                                         child: Text(
-                                          name.length > 9 ? '${name.substring(0, 8)}…' : name,
-                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                          displayName,
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                                         ),
                                       ),
                                     );
@@ -1824,12 +1825,14 @@ class _DashboardViewState extends State<DashboardView> {
       barColor = Colors.teal;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
-      color: const Color(0xFFFFF1F2), // Light Rose Background Color
+      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFF1F2),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFFECDD3), width: 1.2),
+        side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFFECDD3), width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -1846,12 +1849,12 @@ class _DashboardViewState extends State<DashboardView> {
                     children: [
                       Text(
                         'Admin Performance Analytics',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Performance graphs & comparison table for administrators',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
                       ),
                     ],
                   ),
@@ -1890,18 +1893,20 @@ class _DashboardViewState extends State<DashboardView> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: AppColors.border),
+                    color: Theme.of(context).colorScheme.surface,
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : AppColors.border),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _dateFilter,
-                      items: const [
-                        DropdownMenuItem(value: 'all', child: Text('All Time')),
-                        DropdownMenuItem(value: 'week', child: Text('This Week')),
-                        DropdownMenuItem(value: 'month', child: Text('This Month')),
-                        DropdownMenuItem(value: 'custom', child: Text('Custom Range')),
+                      dropdownColor: Theme.of(context).colorScheme.surface,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w500),
+                      items: [
+                        DropdownMenuItem(value: 'all', child: Text('All Time', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                        DropdownMenuItem(value: 'week', child: Text('This Week', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                        DropdownMenuItem(value: 'month', child: Text('This Month', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+                        DropdownMenuItem(value: 'custom', child: Text('Custom Range', style: TextStyle(color: Theme.of(context).colorScheme.onSurface))),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -1947,7 +1952,7 @@ class _DashboardViewState extends State<DashboardView> {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 alignment: Alignment.center,
-                child: const Text('No admin activity data recorded for this selection.', style: TextStyle(color: AppColors.textSecondary)),
+                child: Text('No admin activity data recorded for this selection.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               )
             else ...[
               // Side-by-Side Bar Charts Grid
@@ -1991,7 +1996,7 @@ class _DashboardViewState extends State<DashboardView> {
                       child: SizedBox(
                         width: minTableWidth,
                         child: Table(
-                          border: TableBorder.all(color: const Color(0xFFFECDD3), width: 0.8),
+                          border: TableBorder.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFFECDD3), width: 0.8),
                           columnWidths: const {
                             0: FlexColumnWidth(2.2),
                             1: FlexColumnWidth(1.2),
@@ -1999,13 +2004,13 @@ class _DashboardViewState extends State<DashboardView> {
                             3: FlexColumnWidth(1.4),
                           },
                           children: [
-                            const TableRow(
-                              decoration: BoxDecoration(color: Color(0xFFFFE4E6)),
+                            TableRow(
+                              decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFE4E6)),
                               children: [
-                                Padding(padding: EdgeInsets.all(12), child: Text('Admin Name', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF9F1239)))),
-                                Padding(padding: EdgeInsets.all(12), child: Text('Total Entries', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF9F1239)))),
-                                Padding(padding: EdgeInsets.all(12), child: Text('Total Donations', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF9F1239)))),
-                                Padding(padding: EdgeInsets.all(12), child: Text('Last Entry', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF9F1239)))),
+                                Padding(padding: const EdgeInsets.all(12), child: Text('Admin Name', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF9F1239)))),
+                                Padding(padding: const EdgeInsets.all(12), child: Text('Total Entries', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF9F1239)))),
+                                Padding(padding: const EdgeInsets.all(12), child: Text('Total Donations', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF9F1239)))),
+                                Padding(padding: const EdgeInsets.all(12), child: Text('Last Entry', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF9F1239)))),
                               ],
                             ),
                             ...activeList.map((item) {
@@ -2067,14 +2072,14 @@ class _DashboardViewState extends State<DashboardView> {
                                     padding: const EdgeInsets.all(12),
                                     child: Text(
                                       AppUtils.formatCurrency(item['totalDonations'] ?? 0),
-                                      style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold),
+                                      style: TextStyle(color: isDark ? const Color(0xFF34D399) : Colors.green.shade700, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Text(
                                       lastDateStr,
-                                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                                     ),
                                   ),
                                 ],
@@ -2230,12 +2235,13 @@ class _DashboardViewState extends State<DashboardView> {
                               reservedSize: 45,
                               getTitlesWidget: (value, meta) {
                                 if (value == 0) return const SizedBox.shrink();
+                                final textColor = Theme.of(context).colorScheme.onSurface;
                                 if (isDonation) {
-                                  if (value >= 100000) return Text('₹${(value / 100000).toStringAsFixed(1)}L', style: const TextStyle(fontSize: 10));
-                                  if (value >= 1000) return Text('₹${(value / 1000).toStringAsFixed(0)}k', style: const TextStyle(fontSize: 10));
-                                  return Text('₹${value.toInt()}', style: const TextStyle(fontSize: 10));
+                                  if (value >= 100000) return Text('₹${(value / 100000).toStringAsFixed(1)}L', style: TextStyle(fontSize: 10, color: textColor));
+                                  if (value >= 1000) return Text('₹${(value / 1000).toStringAsFixed(0)}k', style: TextStyle(fontSize: 10, color: textColor));
+                                  return Text('₹${value.toInt()}', style: TextStyle(fontSize: 10, color: textColor));
                                 }
-                                return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                                return Text('${value.toInt()}', style: TextStyle(fontSize: 10, color: textColor));
                               },
                             ),
                           ),
@@ -2258,7 +2264,7 @@ class _DashboardViewState extends State<DashboardView> {
                                       angle: -0.3,
                                       child: Text(
                                         displayName,
-                                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                                       ),
                                     ),
                                   );
