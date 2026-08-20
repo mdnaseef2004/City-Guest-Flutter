@@ -33,13 +33,13 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/full_mkc_logo.png"
+  image_path: "assets/logo.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/full_mkc_logo.png"
+  adaptive_icon_foreground: "assets/logo.png"
   web:
     generate: true
-    image_path: "assets/full_mkc_logo.png"
+    image_path: "assets/logo.png"
     background_color: "#FFFFFF"
     theme_color: "#064E3B"
 
@@ -47,4 +47,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/full_mkc_logo.png
+    - assets/logo.png
     - assets/hero.png

@@ -205,25 +205,71 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                UserAccountsDrawerHeader(
-                  accountName: Text(profile?.name ?? 'User', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-                  accountEmail: Text(profile?.email ?? '', style: const TextStyle(color: Color(0xFFA7F3D0), fontSize: 13)),
-                  currentAccountPicture: CircleAvatar(
-                    backgroundColor: Colors.white,
-                    backgroundImage: hasProfilePic ? NetworkImage(profile.profilePicture!) : null,
-                    child: !hasProfilePic
-                        ? Text(
-                            profile?.name.isNotEmpty == true ? profile!.name[0].toUpperCase() : 'U',
-                            style: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 22),
-                          )
-                        : null,
-                  ),
+                DrawerHeader(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF064E3B), Color(0xFF022C22)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/full_mkc_logo.png',
+                          height: 52,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.apartment_rounded,
+                            color: Color(0xFF059669),
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.white,
+                            backgroundImage: hasProfilePic ? NetworkImage(profile.profilePicture!) : null,
+                            child: !hasProfilePic
+                                ? Text(
+                                    profile?.name.isNotEmpty == true ? profile!.name[0].toUpperCase() : 'U',
+                                    style: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 14),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(profile?.name ?? 'User', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                                Text(profile?.email ?? '', style: const TextStyle(color: Color(0xFFA7F3D0), fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 for (int i = 0; i < navItems.length; i++)
@@ -357,10 +403,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: const [
                               BoxShadow(
                                 color: Color(0x30022C22),
@@ -371,8 +417,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                           ),
                           child: Image.asset(
                             'assets/full_mkc_logo.png',
-                            height: 65,
-                            width: 180,
+                            height: 75,
+                            width: double.infinity,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) => const Icon(
                               Icons.apartment_rounded,

@@ -74,7 +74,7 @@ class _LoginViewState extends State<LoginView> {
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.08),
@@ -85,8 +85,8 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           child: Image.asset(
                             'assets/full_mkc_logo.png',
-                            height: 90,
-                            width: 220,
+                            height: 100,
+                            width: 280,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
