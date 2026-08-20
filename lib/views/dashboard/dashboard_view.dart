@@ -829,16 +829,16 @@ class _DashboardViewState extends State<DashboardView> {
                           // Colorful Input 1: Admin Name (Indigo Accent)
                           TextField(
                             controller: nameController,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                             decoration: InputDecoration(
                               labelText: 'Admin Name',
                               labelStyle: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.w600),
                               prefixIcon: const Icon(Icons.person, color: Color(0xFF4F46E5)),
                               filled: true,
-                              fillColor: const Color(0xFFEEF2FF),
+                              fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Color(0xFFC7D2FE), width: 1.2),
+                                borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFC7D2FE), width: 1.2),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -851,16 +851,16 @@ class _DashboardViewState extends State<DashboardView> {
                           // Colorful Input 2: Date of Birth / Age (Rose Accent)
                           TextField(
                             controller: dobController,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                             decoration: InputDecoration(
                               labelText: 'Date of Birth / Age (YYYY-MM-DD)',
                               labelStyle: const TextStyle(color: Color(0xFFDB2777), fontWeight: FontWeight.w600),
                               prefixIcon: const Icon(Icons.cake_rounded, color: Color(0xFFDB2777)),
                               filled: true,
-                              fillColor: const Color(0xFFFCE7F3),
+                              fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFFCE7F3),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Color(0xFFFBCFE8), width: 1.2),
+                                borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFFBCFE8), width: 1.2),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -888,7 +888,7 @@ class _DashboardViewState extends State<DashboardView> {
                           // Colorful Input 3: Phone Number (Emerald Accent)
                           TextField(
                             controller: phoneController,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
                             decoration: InputDecoration(
                               labelText: 'Phone Number',
                               labelStyle: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w600),
@@ -1586,7 +1586,7 @@ class _DashboardViewState extends State<DashboardView> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: isSuccess ? Colors.green.shade700 : AppColors.textPrimary,
+                color: isSuccess ? Colors.green.shade700 : Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -2340,7 +2340,7 @@ class _DashboardViewState extends State<DashboardView> {
               alignment: Alignment.centerLeft,
               child: Text(
                 value,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
               ),
             ),
             const SizedBox(height: 2),

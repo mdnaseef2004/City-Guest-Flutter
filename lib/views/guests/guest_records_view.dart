@@ -811,14 +811,14 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                               width: calcWidth,
                               child: TextField(
                                 controller: _searchController,
-                                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
                                 decoration: InputDecoration(
                                   hintText: 'Search guests by...',
-                                  hintStyle: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                  hintStyle: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                   prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.primary),
                                   isDense: true,
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: Theme.of(context).colorScheme.surface,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
@@ -912,7 +912,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                     value: guestProvider.selectedCreatedBy,
                                     isDense: true,
                                     isExpanded: true,
-                                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500),
                                     hint: const Text('All Admins', style: TextStyle(fontSize: 12, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
                                     items: [
                                       const DropdownMenuItem<String>(value: null, child: Text('All Admins', style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
@@ -1209,7 +1209,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
           value: value,
           isDense: true,
           isExpanded: true,
-          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500),
           hint: Text(hint, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
           items: [
             DropdownMenuItem<String>(value: null, child: Text(hint, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../config/constants.dart';
 import '../core/responsive_layout.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import 'dashboard/dashboard_view.dart';
 import 'guests/add_guest_view.dart';
 import 'guests/guest_records_view.dart';
@@ -88,6 +89,36 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             actions: [
+              // Theme Mode Selector Toggle Button (System / Light / Dark)
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  IconData themeIcon;
+                  String themeTooltip;
+                  if (themeProvider.themeMode == ThemeMode.dark) {
+                    themeIcon = Icons.dark_mode_rounded;
+                    themeTooltip = 'Theme: Dark';
+                  } else if (themeProvider.themeMode == ThemeMode.light) {
+                    themeIcon = Icons.light_mode_rounded;
+                    themeTooltip = 'Theme: Light';
+                  } else {
+                    themeIcon = Icons.brightness_auto_rounded;
+                    themeTooltip = 'Theme: System';
+                  }
+                  return IconButton(
+                    icon: Icon(themeIcon, color: Colors.white, size: 22),
+                    tooltip: themeTooltip,
+                    onPressed: () {
+                      if (themeProvider.themeMode == ThemeMode.system) {
+                        themeProvider.setThemeMode(ThemeMode.light);
+                      } else if (themeProvider.themeMode == ThemeMode.light) {
+                        themeProvider.setThemeMode(ThemeMode.dark);
+                      } else {
+                        themeProvider.setThemeMode(ThemeMode.system);
+                      }
+                    },
+                  );
+                },
+              ),
               // Top Bar Notification Button
               Stack(
                 alignment: Alignment.center,
@@ -164,13 +195,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                       dense: true,
                       leading: Icon(
                         _selectedIndex == i ? navItems[i].activeIcon : navItems[i].icon,
-                        color: _selectedIndex == i ? Colors.white : const Color(0xFF059669),
+                        color: _selectedIndex == i ? Colors.white : const Color(0xFF10B981),
                       ),
                       title: Text(
                         navItems[i].title,
                         style: TextStyle(
                           fontWeight: _selectedIndex == i ? FontWeight.bold : FontWeight.w500,
-                          color: _selectedIndex == i ? Colors.white : const Color(0xFF1E293B),
+                          color: _selectedIndex == i ? Colors.white : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       selected: _selectedIndex == i,
@@ -181,7 +212,42 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     ),
                   ),
                 const Divider(),
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    String label = 'Theme Mode: System';
+                    IconData icon = Icons.brightness_auto_rounded;
+                    if (themeProvider.themeMode == ThemeMode.dark) {
+                      label = 'Theme Mode: Dark';
+                      icon = Icons.dark_mode_rounded;
+                    } else if (themeProvider.themeMode == ThemeMode.light) {
+                      label = 'Theme Mode: Light';
+                      icon = Icons.light_mode_rounded;
+                    }
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(icon, color: const Color(0xFF10B981)),
+                      title: Text(
+                        label,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.swap_horiz_rounded, size: 18),
+                      onTap: () {
+                        if (themeProvider.themeMode == ThemeMode.system) {
+                          themeProvider.setThemeMode(ThemeMode.light);
+                        } else if (themeProvider.themeMode == ThemeMode.light) {
+                          themeProvider.setThemeMode(ThemeMode.dark);
+                        } else {
+                          themeProvider.setThemeMode(ThemeMode.system);
+                        }
+                      },
+                    );
+                  },
+                ),
                 ListTile(
+                  dense: true,
                   leading: const Icon(Icons.logout, color: AppColors.danger),
                   title: const Text('Sign Out', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
                   onTap: () => authProvider.signOut(),
@@ -375,18 +441,24 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final mobileIndices = [0, 1, 4, 5];
     final selectedBottomIndex = mobileIndices.indexOf(_selectedIndex);
     final activeIndex = selectedBottomIndex != -1 ? selectedBottomIndex : 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(left: 12, right: 12, bottom: 12, top: 4),
       height: 62,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)],
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFA7F3D0),
+          width: 1.5,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x3510B981),
@@ -449,7 +521,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                       Icon(
                         isSelected ? item.activeIcon : item.icon,
                         size: isSelected ? 20 : 20,
-                        color: isSelected ? Colors.white : const Color(0xFF047857),
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF047857)),
                       ),
                       if (isSelected) ...[
                         const SizedBox(width: 5),

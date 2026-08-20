@@ -132,7 +132,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                                     const SizedBox(height: 4),
                                     Text(
                                       item.message,
-                                      style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.3),
+                                      style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface, height: 1.3),
                                     ),
                                   ],
                                 ),

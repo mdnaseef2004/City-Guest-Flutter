@@ -615,7 +615,7 @@ class _EventsViewState extends State<EventsView> {
                     ),
 
                     const SizedBox(height: 16),
-                    const Text('Event Records', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    Text('Event Records', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 10),
 
                     // Event List Records
@@ -623,7 +623,7 @@ class _EventsViewState extends State<EventsView> {
                         ? Container(
                             height: 180,
                             alignment: Alignment.center,
-                            child: const Text('No events found for selected period or search.', style: TextStyle(color: AppColors.textSecondary)),
+                            child: Text('No events found for selected period or search.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                           )
                         : ListView.builder(
                             shrinkWrap: true,
@@ -639,14 +639,14 @@ class _EventsViewState extends State<EventsView> {
                                     backgroundColor: Color(0xFF10B981),
                                     child: Icon(Icons.event_available_rounded, color: Colors.white, size: 20),
                                   ),
-                                  title: Text(item.eventName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                  title: Text(item.eventName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
                                   subtitle: Text(
                                     'Place: ${item.eventPlace} | Members: ${item.membersCount}\nOrganized by: ${item.organizedBy} | Handled by: ${item.handledBy}',
-                                    style: const TextStyle(fontSize: 12),
+                                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                   ),
                                   trailing: Text(
                                     AppUtils.formatDate(item.eventDate),
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                   ),
                                 ),
                               );
@@ -664,14 +664,14 @@ class _EventsViewState extends State<EventsView> {
       height: 42,
       child: TextField(
         controller: _searchController,
-        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+        style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: 'Search events by name, place, handled by...',
-          hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          hintStyle: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.primary),
           isDense: true,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surface,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
