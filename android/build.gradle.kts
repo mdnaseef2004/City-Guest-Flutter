@@ -20,10 +20,18 @@ subprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        if (project.hasProperty("android")) {
-            val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+    val subproject = this
+    fun applyCompileSdk() {
+        if (subproject.hasProperty("android")) {
+            val android = subproject.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
             android?.compileSdkVersion(36)
+        }
+    }
+    if (subproject.state.executed) {
+        applyCompileSdk()
+    } else {
+        subproject.afterEvaluate {
+            applyCompileSdk()
         }
     }
 }
