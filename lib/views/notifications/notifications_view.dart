@@ -5,6 +5,7 @@ import '../../core/utils.dart';
 import '../../models/app_notification.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/supabase_service.dart';
+import '../assignments/assignments_view.dart';
 
 class NotificationsView extends StatefulWidget {
   const NotificationsView({super.key});
@@ -82,7 +83,7 @@ class _NotificationsViewState extends State<NotificationsView> {
               : RefreshIndicator(
                   onRefresh: _loadNotifications,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     itemCount: _notifications.length,
                     itemBuilder: (context, index) {
                       final item = _notifications[index];
@@ -92,52 +93,68 @@ class _NotificationsViewState extends State<NotificationsView> {
                         elevation: 2,
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: (isUrgent ? AppColors.danger : AppColors.primary).withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            // If task assignment related, navigate to Assignments
+                            if (item.title.contains('Task') ||
+                                item.title.contains('Assignment') ||
+                                item.title.contains('REMINDER') ||
+                                item.title.contains('Accepted') ||
+                                item.title.contains('REJECTED')) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AssignmentsView()),
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: (isUrgent ? AppColors.danger : AppColors.primary).withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isUrgent ? Icons.error_outline_rounded : Icons.notifications_active_rounded,
+                                    color: isUrgent ? AppColors.danger : AppColors.primary,
+                                    size: 22,
+                                  ),
                                 ),
-                                child: Icon(
-                                  isUrgent ? Icons.error_outline_rounded : Icons.notifications_active_rounded,
-                                  color: isUrgent ? AppColors.danger : AppColors.primary,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            item.title,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              item.title,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                            ),
                                           ),
-                                        ),
-                                        Text(
-                                          AppUtils.formatDateTime(item.createdAt),
-                                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item.message,
-                                      style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface, height: 1.3),
-                                    ),
-                                  ],
+                                          Text(
+                                            AppUtils.formatDateTime(item.createdAt),
+                                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item.message,
+                                        style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface, height: 1.3),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

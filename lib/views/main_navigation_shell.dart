@@ -12,6 +12,9 @@ import 'guests/guest_records_view.dart';
 import 'assignments/assignments_view.dart';
 import 'events/events_view.dart';
 import 'reports/reports_view.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/notification_service.dart';
+import '../services/supabase_service.dart';
 import 'user_management/user_management_view.dart';
 import 'notifications/notifications_view.dart';
 
@@ -24,6 +27,55 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedIndex = 0;
+  RealtimeChannel? _notificationChannel;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToNotifications();
+  }
+
+  @override
+  void dispose() {
+    if (_notificationChannel != null) {
+      SupabaseService.client.removeChannel(_notificationChannel!);
+    }
+    super.dispose();
+  }
+
+  void _subscribeToNotifications() {
+    final user = SupabaseService.currentUser;
+    if (user == null) return;
+
+    final channelName = 'public:app_notifications_${user.id}_${DateTime.now().millisecondsSinceEpoch}';
+    _notificationChannel = SupabaseService.client
+        .channel(channelName)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'app_notifications',
+          callback: (payload) {
+            final record = payload.newRecord;
+            final targetUserId = record['user_id']?.toString();
+            if (targetUserId == user.id || targetUserId == null) {
+              final title = record['title']?.toString() ?? 'New Notification';
+              final message = record['message']?.toString() ?? '';
+              final type = record['type']?.toString() ?? 'info';
+
+              if (mounted) {
+                NotificationService.showNotificationPopup(
+                  context,
+                  title: title,
+                  message: message,
+                  isError: type == 'urgent' || type == 'error',
+                  icon: type == 'urgent' ? Icons.warning_amber_rounded : Icons.notifications_active_rounded,
+                );
+              }
+            }
+          },
+        )
+        .subscribe();
+  }
 
   List<NavItem> _getNavItems(bool isSuperAdmin) {
     return [

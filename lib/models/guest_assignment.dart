@@ -2,11 +2,12 @@ class GuestAssignment {
   final String id;
   final String guestName;
   final String? notes;
+  final String? rejectionReason;
   final String assignedTo;
   final String? assignedToName;
   final String assignedBy;
   final String? assignedByName;
-  final String status; // 'pending' | 'in_progress' | 'completed'
+  final String status; // 'pending' | 'in_progress' | 'waiting_for_guest' | 'rejected' | 'completed'
   final DateTime? dueDate;
   final bool isUrgent;
   final DateTime createdAt;
@@ -15,6 +16,7 @@ class GuestAssignment {
     required this.id,
     required this.guestName,
     this.notes,
+    this.rejectionReason,
     required this.assignedTo,
     this.assignedToName,
     required this.assignedBy,
@@ -40,6 +42,7 @@ class GuestAssignment {
       id: json['id']?.toString() ?? '',
       guestName: json['guest_name'] ?? '',
       notes: json['notes'],
+      rejectionReason: json['rejection_reason'],
       assignedTo: json['assigned_to']?.toString() ?? '',
       assignedToName: assignedToName,
       assignedBy: json['assigned_by']?.toString() ?? '',
