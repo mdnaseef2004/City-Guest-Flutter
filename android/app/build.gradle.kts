@@ -43,10 +43,6 @@ kotlin {
     }
 }
 
-tasks.withType<com.android.build.gradle.internal.tasks.CheckAarMetadataTask> {
-    enabled = false
-}
-
 flutter {
     source = "../.."
 }
