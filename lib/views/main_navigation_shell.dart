@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -255,7 +256,28 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               ],
             ),
           ),
-          body: _getSelectedView(isSuperAdmin),
+          extendBody: true,
+          body: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 0.02),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: KeyedSubtree(
+              key: ValueKey<int>(_selectedIndex),
+              child: _getSelectedView(isSuperAdmin),
+            ),
+          ),
           bottomNavigationBar: _buildLiquidBottomNavBar(navItems),
         ),
 
@@ -445,108 +467,134 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(left: 12, right: 12, bottom: 12, top: 4),
-      height: 62,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-              : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFA7F3D0),
-          width: 1.5,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x3510B981),
-            blurRadius: 16,
-            spreadRadius: 1,
-            offset: Offset(0, 6),
-          ),
-          BoxShadow(
-            color: Color(0x1A064E3B),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(mobileIndices.length, (index) {
-            final isSelected = activeIndex == index;
-            final item = navItems[mobileIndices[index]];
-
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedIndex = mobileIndices[index];
-                  });
-                },
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeOutCubic,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSelected ? 10 : 4,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? const LinearGradient(
+      margin: const EdgeInsets.only(left: 14, right: 14, bottom: 18, top: 4),
+      height: 66,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(36),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [
+                        const Color(0xFF1E293B).withValues(alpha: 0.78),
+                        const Color(0xFF0F172A).withValues(alpha: 0.72),
+                      ]
+                    : [
+                        Colors.white.withValues(alpha: 0.78),
+                        const Color(0xFFD1FAE5).withValues(alpha: 0.68),
+                      ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(36),
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF334155).withValues(alpha: 0.8)
+                    : const Color(0xFF10B981).withValues(alpha: 0.4),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? const Color(0x60000000)
+                      : const Color(0x3510B981),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              child: Stack(
+                children: [
+                  // Smooth Gliding Liquid Indicator Pill Background
+                  AnimatedAlign(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutBack,
+                    alignment: Alignment(-1.0 + (activeIndex * (2.0 / 3.0)), 0.0),
+                    child: FractionallySizedBox(
+                      widthFactor: 0.28,
+                      heightFactor: 1.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
                             colors: [Color(0xFF047857), Color(0xFF065F46)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                          )
-                        : null,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: isSelected
-                        ? const [
+                          ),
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: const [
                             BoxShadow(
                               color: Color(0x50047857),
-                              blurRadius: 8,
-                              offset: Offset(0, 3),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
                             ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isSelected ? item.activeIcon : item.icon,
-                        size: isSelected ? 20 : 20,
-                        color: isSelected
-                            ? Colors.white
-                            : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF047857)),
+                          ],
+                        ),
                       ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            item.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11.5,
+                    ),
+                  ),
+
+                  // Interactive Tab Items Layer
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(mobileIndices.length, (index) {
+                      final isSelected = activeIndex == index;
+                      final item = navItems[mobileIndices[index]];
+
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedIndex = mobileIndices[index];
+                            });
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Center(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              child: Row(
+                                key: ValueKey<bool>(isSelected),
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isSelected ? item.activeIcon : item.icon,
+                                    size: 20,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF047857)),
+                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 5),
+                                    Flexible(
+                                      child: Text(
+                                        item.title,
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 11.5,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
-                    ],
+                      );
+                    }),
                   ),
-                ),
+                ],
               ),
-            );
-          }),
+            ),
+          ),
         ),
       ),
     );

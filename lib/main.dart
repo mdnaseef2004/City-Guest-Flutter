@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'config/constants.dart';
 import 'config/theme.dart';
+import 'core/scroll_behavior.dart';
 import 'providers/auth_provider.dart';
 import 'providers/guest_provider.dart';
 import 'providers/theme_provider.dart';
@@ -36,6 +37,7 @@ class CityGuestApp extends StatelessWidget {
           return MaterialApp(
             title: AppConstants.appName,
             debugShowCheckedModeBanner: false,
+            scrollBehavior: const AppScrollBehavior(),
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
