@@ -597,31 +597,35 @@ class _AssignmentsViewState extends State<AssignmentsView> {
       appBar: AppBar(
         title: const Text('Guest Task Assignments'),
         actions: [
-          ElevatedButton.icon(
-            onPressed: _showNewAssignmentDialog,
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          if (isSuperAdmin) ...[
+            ElevatedButton.icon(
+              onPressed: _showNewAssignmentDialog,
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
+            const SizedBox(width: 6),
+          ],
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
           const SizedBox(width: 6),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 75),
-        child: FloatingActionButton.extended(
-          onPressed: _showNewAssignmentDialog,
-          icon: const Icon(Icons.add),
-          label: const Text('New Assignment', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: AppColors.primary,
-        ),
-      ),
+      floatingActionButton: isSuperAdmin
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 75),
+              child: FloatingActionButton.extended(
+                onPressed: _showNewAssignmentDialog,
+                icon: const Icon(Icons.add),
+                label: const Text('New Assignment', style: TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: AppColors.primary,
+              ),
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _assignments.isEmpty
@@ -643,24 +647,28 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Assign tasks and follow-ups to admin team members.',
+                          isSuperAdmin
+                              ? 'Assign tasks and follow-ups to admin team members.'
+                              : 'Tasks assigned to you will appear here.',
                           style: TextStyle(
                             fontSize: 13,
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: _showNewAssignmentDialog,
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Assign New Task', style: TextStyle(fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF059669),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        if (isSuperAdmin) ...[
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            onPressed: _showNewAssignmentDialog,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Assign New Task', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF059669),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

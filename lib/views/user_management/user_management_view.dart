@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../core/utils.dart';
 import '../../models/profile.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/supabase_service.dart';
 
 class UserManagementView extends StatefulWidget {
@@ -252,37 +254,42 @@ class _UserManagementViewState extends State<UserManagementView> {
 
   @override
   Widget build(BuildContext context) {
+    final isSuperAdmin = Provider.of<AuthProvider>(context).isSuperAdmin;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Management Panel'),
         actions: [
-          ElevatedButton.icon(
-            onPressed: _openCreateUserDialog,
-            icon: const Icon(Icons.person_add, size: 16),
-            label: const Text('Add User', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          if (isSuperAdmin) ...[
+            ElevatedButton.icon(
+              onPressed: _openCreateUserDialog,
+              icon: const Icon(Icons.person_add, size: 16),
+              label: const Text('Add User', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
+            const SizedBox(width: 6),
+          ],
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadUsers),
           const SizedBox(width: 6),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 75),
-        child: FloatingActionButton.extended(
-          onPressed: _openCreateUserDialog,
-          icon: const Icon(Icons.person_add),
-          label: const Text('Add Sub Admin', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: AppColors.primary,
-        ),
-      ),
+      floatingActionButton: isSuperAdmin
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 75),
+              child: FloatingActionButton.extended(
+                onPressed: _openCreateUserDialog,
+                icon: const Icon(Icons.person_add),
+                label: const Text('Add Sub Admin', style: TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: AppColors.primary,
+              ),
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
