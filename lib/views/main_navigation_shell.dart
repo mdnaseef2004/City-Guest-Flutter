@@ -219,27 +219,26 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: Image.asset(
                           'assets/full_mkc_logo.png',
-                          height: 52,
-                          width: double.infinity,
+                          height: 36,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => const Icon(
                             Icons.apartment_rounded,
                             color: Color(0xFF059669),
-                            size: 32,
+                            size: 24,
                           ),
                         ),
                       ),
@@ -403,27 +402,26 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             boxShadow: const [
                               BoxShadow(
                                 color: Color(0x30022C22),
-                                blurRadius: 14,
-                                offset: Offset(0, 4),
+                                blurRadius: 8,
+                                offset: Offset(0, 3),
                               ),
                             ],
                           ),
                           child: Image.asset(
                             'assets/full_mkc_logo.png',
-                            height: 75,
-                            width: double.infinity,
+                            height: 45,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) => const Icon(
                               Icons.apartment_rounded,
                               color: Color(0xFF059669),
-                              size: 32,
+                              size: 28,
                             ),
                           ),
                         ),
