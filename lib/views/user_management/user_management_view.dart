@@ -261,20 +261,6 @@ class _UserManagementViewState extends State<UserManagementView> {
       appBar: AppBar(
         title: const Text('User Management Panel'),
         actions: [
-          if (isSuperAdmin) ...[
-            ElevatedButton.icon(
-              onPressed: _openCreateUserDialog,
-              icon: const Icon(Icons.person_add, size: 16),
-              label: const Text('Add User', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF059669),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadUsers),
           const SizedBox(width: 6),
         ],
