@@ -390,17 +390,36 @@ class _EventsViewState extends State<EventsView> {
       appBar: AppBar(
         title: const Text('Event Records'),
         actions: [
+          ElevatedButton.icon(
+            onPressed: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEventView()));
+              _loadEvents();
+            },
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Add Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 6),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadEvents),
+          const SizedBox(width: 6),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEventView()));
-          _loadEvents();
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Event'),
-        backgroundColor: AppColors.primary,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 75),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEventView()));
+            _loadEvents();
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Add Event', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: AppColors.primary,
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
