@@ -86,7 +86,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             iconTheme: const IconThemeData(color: Colors.white),
             title: Text(
               navItems[_selectedIndex].title,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 21, letterSpacing: 0.4, color: Colors.white),
             ),
             actions: [
               // Theme Mode Selector Toggle Button (System / Light / Dark)
@@ -362,10 +362,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                             ),
                             title: Text(
                               item.title,
-                              style: TextStyle(
+                              style: GoogleFonts.poppins(
                                 color: isSelected ? Colors.white : const Color(0xFFA7F3D0),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                                fontSize: 15,
+                                letterSpacing: 0.3,
                               ),
                             ),
                             onTap: () => setState(() => _selectedIndex = index),

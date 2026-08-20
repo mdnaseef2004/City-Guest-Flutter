@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -260,7 +261,15 @@ class _DashboardViewState extends State<DashboardView> {
     return Scaffold(
       appBar: isDesktop
           ? AppBar(
-              title: const Text('Dashboard Analytics'),
+              title: Text(
+                'Dashboard Analytics',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 22,
+                  letterSpacing: 0.5,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.settings_outlined),
@@ -336,7 +345,7 @@ class _DashboardViewState extends State<DashboardView> {
                                             children: [
                                               Text(
                                                 'Welcome back, ${profile?.name ?? 'User'}!',
-                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                                style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -412,7 +421,7 @@ class _DashboardViewState extends State<DashboardView> {
                                       children: [
                                         Text(
                                           'Welcome back, ${profile?.name ?? 'User'}!',
-                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                          style: GoogleFonts.poppins(fontSize: 21, fontWeight: FontWeight.w900, color: Colors.white),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -988,7 +997,7 @@ class _DashboardViewState extends State<DashboardView> {
               children: [
                 Text(
                   'Recent Guest Photos',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 17, color: Theme.of(context).colorScheme.onSurface),
                 ),
                 TextButton.icon(
                   onPressed: () => _showAllPhotosGalleryDialog(recentPhotos),
@@ -1248,7 +1257,7 @@ class _DashboardViewState extends State<DashboardView> {
                     children: [
                       Text(
                         'Event Attendance Analytics Graph',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
                       ),
                       const SizedBox(height: 4),
                       Text(
