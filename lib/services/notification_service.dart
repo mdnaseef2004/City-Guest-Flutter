@@ -154,6 +154,49 @@ class NotificationService {
     );
   }
 
+  // Send notification to all Super Admins
+  static Future<void> notifySuperAdmins({
+    required String title,
+    required String message,
+    String type = 'info',
+  }) async {
+    try {
+      final profiles = await SupabaseService.client.from('profiles').select('id, email, role');
+      for (final p in (profiles as List)) {
+        final id = p['id']?.toString();
+        final email = p['email']?.toString().toLowerCase().trim() ?? '';
+        final role = p['role']?.toString();
+
+        if (id != null && (role == 'super_admin' || superAdminEmails.contains(email))) {
+          await saveNotification(
+            userId: id,
+            title: title,
+            message: message,
+            type: type,
+          );
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Super Admin sends Remark / Thank You Comment to a Sub Admin
+  static Future<void> sendRemarkToSubAdmin({
+    required String subAdminUserId,
+    required String remarkText,
+    required String superAdminName,
+    String? taskName,
+  }) async {
+    final title = taskName != null ? '💬 Remark on Task: "$taskName"' : '💬 Message from Super Admin';
+    final message = '$superAdminName: "$remarkText"';
+
+    await saveNotification(
+      userId: subAdminUserId,
+      title: title,
+      message: message,
+      type: 'info',
+    );
+  }
+
   // Notify file download or upload operation result
   static void notifyFileAction(
     BuildContext context, {
