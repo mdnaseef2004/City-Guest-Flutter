@@ -7,6 +7,7 @@ import 'core/scroll_behavior.dart';
 import 'providers/auth_provider.dart';
 import 'providers/guest_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/notification_service.dart';
 import 'services/supabase_service.dart';
 import 'views/auth/login_view.dart';
 import 'views/main_navigation_shell.dart';
@@ -18,8 +19,10 @@ void main() async {
   try {
     // Initialize Supabase Backend connection
     await SupabaseService.initialize();
+    // Initialize System Tray Notifications & Tap Listeners
+    await NotificationService.initLocalNotifications();
   } catch (e) {
-    debugPrint('Error initializing Supabase on launch: $e');
+    debugPrint('Error initializing services on launch: $e');
   }
 
   runApp(const CityGuestApp());

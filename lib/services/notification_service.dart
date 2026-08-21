@@ -1,17 +1,95 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../config/constants.dart';
 import '../services/supabase_service.dart';
 import 'audio_helper.dart';
 
 class NotificationService {
+  static final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  static final StreamController<String?> selectNotificationStream =
+      StreamController<String?>.broadcast();
+
   // Super Admin Emails Whitelist
   static const List<String> superAdminEmails = [
     'mdnaseef2004@gmail.com',
     'shaheenmohammed554@gmail.com',
     'mampadanmujeeb@gmail.com',
   ];
+
+  // Initialize System Notifications
+  static Future<void> initLocalNotifications() async {
+    if (kIsWeb) return;
+
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const darwinSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: darwinSettings,
+    );
+
+    await _localNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        selectNotificationStream.add(response.payload ?? 'notifications');
+      },
+    );
+
+    // Request Android 13+ Notification Permission
+    final androidPlugin = _localNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      await androidPlugin.requestNotificationsPermission();
+    }
+  }
+
+  // Show System Notification in Phone Status Bar with Sound & Vibration
+  static Future<void> showSystemNotification({
+    required String title,
+    required String message,
+    String payload = 'notifications',
+  }) async {
+    if (kIsWeb) return;
+
+    const androidDetails = AndroidNotificationDetails(
+      'city_guest_channel_v2',
+      'City Guest Notifications',
+      channelDescription: 'Realtime notifications for City Guest tasks and updates',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const darwinDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: darwinDetails,
+    );
+
+    final notificationId = (DateTime.now().millisecondsSinceEpoch % 100000).toInt();
+    await _localNotificationsPlugin.show(
+      notificationId,
+      title,
+      message,
+      details,
+      payload: payload,
+    );
+  }
 
   // Play Crisp, Loud High-Frequency Audio Chime using Web Audio Synthesizer
   static void playNotificationSound({bool isError = false}) {

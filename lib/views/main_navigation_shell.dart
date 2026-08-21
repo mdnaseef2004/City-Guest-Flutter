@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,19 +29,35 @@ class MainNavigationShell extends StatefulWidget {
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedIndex = 0;
   RealtimeChannel? _notificationChannel;
+  StreamSubscription<String?>? _notificationSelectSubscription;
 
   @override
   void initState() {
     super.initState();
+    _listenToNotificationTap();
     _subscribeToNotifications();
   }
 
   @override
   void dispose() {
+    _notificationSelectSubscription?.cancel();
     if (_notificationChannel != null) {
       SupabaseService.client.removeChannel(_notificationChannel!);
     }
     super.dispose();
+  }
+
+  void _listenToNotificationTap() {
+    _notificationSelectSubscription = NotificationService.selectNotificationStream.stream.listen((payload) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final navItems = _getNavItems(authProvider.isSuperAdmin);
+      final notificationIndex = navItems.indexWhere((item) => item.title == 'Notifications');
+      if (notificationIndex != -1 && mounted) {
+        setState(() {
+          _selectedIndex = notificationIndex;
+        });
+      }
+    });
   }
 
   void _subscribeToNotifications() {
@@ -61,6 +78,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               final title = record['title']?.toString() ?? 'New Notification';
               final message = record['message']?.toString() ?? '';
               final type = record['type']?.toString() ?? 'info';
+
+              // Show Android System Tray Notification (sound + vibration + notification bar)
+              NotificationService.showSystemNotification(
+                title: title,
+                message: message,
+              );
 
               if (mounted) {
                 NotificationService.showNotificationPopup(
