@@ -15,8 +15,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = true;
 
-  // Initialize Supabase Backend connection
-  await SupabaseService.initialize();
+  try {
+    // Initialize Supabase Backend connection
+    await SupabaseService.initialize();
+  } catch (e) {
+    debugPrint('Error initializing Supabase on launch: $e');
+  }
 
   runApp(const CityGuestApp());
 }
