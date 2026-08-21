@@ -2,9 +2,12 @@ import java.io.FileInputStream
 import java.util.Properties
 
 val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+val keyPropertiesFile = file("key.properties").takeIf { it.exists() }
+    ?: rootProject.file("key.properties").takeIf { it.exists() }
+    ?: file("../key.properties").takeIf { it.exists() }
+
+if (keyPropertiesFile != null) {
+    keystoreProperties.load(FileInputStream(keyPropertiesFile))
 }
 
 plugins {
@@ -39,10 +42,23 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
-            storePassword = keystoreProperties.getProperty("storePassword")
+            val alias = keystoreProperties.getProperty("keyAlias") ?: "upload"
+            val pass = keystoreProperties.getProperty("keyPassword") ?: "cityguest123"
+            val storePass = keystoreProperties.getProperty("storePassword") ?: "cityguest123"
+            val storeFilePath = keystoreProperties.getProperty("storeFile") ?: "upload-keystore.jks"
+
+            val ksFile = file(storeFilePath).takeIf { it.exists() }
+                ?: file("upload-keystore.jks").takeIf { it.exists() }
+                ?: rootProject.file("upload-keystore.jks").takeIf { it.exists() }
+                ?: file("../upload-keystore.jks").takeIf { it.exists() }
+                ?: file("app/upload-keystore.jks").takeIf { it.exists() }
+
+            keyAlias = alias
+            keyPassword = pass
+            storePassword = storePass
+            if (ksFile != null) {
+                storeFile = ksFile
+            }
         }
     }
 
