@@ -6,7 +6,7 @@ val keyPropertiesFile = file("key.properties").takeIf { it.exists() }
     ?: rootProject.file("key.properties").takeIf { it.exists() }
     ?: file("../key.properties").takeIf { it.exists() }
 
-if (keyPropertiesFile != null) {
+if (keyPropertiesFile != null && keyPropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keyPropertiesFile))
 }
 
