@@ -48,11 +48,17 @@ android {
                 ?: rootProject.file("upload-keystore.jks").takeIf { it.exists() }
                 ?: file("../upload-keystore.jks").takeIf { it.exists() }
                 ?: file("app/upload-keystore.jks").takeIf { it.exists() }
+                ?: rootProject.file("android/upload-keystore.jks").takeIf { it.exists() }
+                ?: rootProject.file("android/app/upload-keystore.jks").takeIf { it.exists() }
 
-            keyAlias = alias
-            keyPassword = pass
-            storePassword = storePass
-            storeFile = ksFile ?: file("upload-keystore.jks")
+            if (ksFile != null && ksFile.exists()) {
+                keyAlias = alias
+                keyPassword = pass
+                storePassword = storePass
+                storeFile = ksFile
+            } else {
+                initWith(getByName("debug"))
+            }
         }
     }
 
