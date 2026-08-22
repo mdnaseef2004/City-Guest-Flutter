@@ -24,6 +24,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   shared_preferences: ^2.3.5
   flutter_local_notifications: ^18.0.1
+  onesignal_flutter: ^5.2.5
 
 dev_dependencies:
   flutter_test:

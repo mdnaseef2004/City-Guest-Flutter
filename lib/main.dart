@@ -21,6 +21,8 @@ void main() async {
     await SupabaseService.initialize();
     // Initialize System Tray Notifications & Tap Listeners
     await NotificationService.initLocalNotifications();
+    // Initialize OneSignal Push Notifications (Works when app is completely closed)
+    await NotificationService.initOneSignal('YOUR_ONESIGNAL_APP_ID');
   } catch (e) {
     debugPrint('Error initializing services on launch: $e');
   }

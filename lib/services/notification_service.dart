@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../config/constants.dart';
 import '../services/supabase_service.dart';
 import 'audio_helper.dart';
@@ -19,6 +20,21 @@ class NotificationService {
     'shaheenmohammed554@gmail.com',
     'mampadanmujeeb@gmail.com',
   ];
+
+  // Initialize OneSignal Push Notifications (Works when app is completely closed / swiped away!)
+  static Future<void> initOneSignal(String oneSignalAppId) async {
+    if (kIsWeb) return;
+    try {
+      OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+      OneSignal.initialize(oneSignalAppId);
+      OneSignal.Notifications.requestPermission(true);
+
+      // Handle notification click when user taps system status bar alert (even when app was closed)
+      OneSignal.Notifications.addClickListener((event) {
+        selectNotificationStream.add('notifications');
+      });
+    } catch (_) {}
+  }
 
   // Initialize System Notifications
   static Future<void> initLocalNotifications() async {

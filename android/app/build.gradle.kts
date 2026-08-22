@@ -29,8 +29,8 @@ android {
 
     defaultConfig {
         applicationId = "com.markazknowledgecity.cityguest"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 21
+        targetSdk = 35
         multiDexEnabled = true
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -38,33 +38,24 @@ android {
 
     signingConfigs {
         create("release") {
-            val alias = keystoreProperties.getProperty("keyAlias") ?: "upload"
-            val pass = keystoreProperties.getProperty("keyPassword") ?: "cityguest123"
-            val storePass = keystoreProperties.getProperty("storePassword") ?: "cityguest123"
-            val storeFilePath = keystoreProperties.getProperty("storeFile") ?: "upload-keystore.jks"
-
-            val ksFile = file(storeFilePath).takeIf { it.exists() }
-                ?: file("upload-keystore.jks").takeIf { it.exists() }
-                ?: rootProject.file("upload-keystore.jks").takeIf { it.exists() }
+            keyAlias = keystoreProperties.getProperty("keyAlias") ?: "upload"
+            keyPassword = keystoreProperties.getProperty("keyPassword") ?: "cityguest123"
+            storePassword = keystoreProperties.getProperty("storePassword") ?: "cityguest123"
+            storeFile = file("upload-keystore.jks").takeIf { it.exists() }
                 ?: file("../upload-keystore.jks").takeIf { it.exists() }
-                ?: file("app/upload-keystore.jks").takeIf { it.exists() }
-                ?: rootProject.file("android/upload-keystore.jks").takeIf { it.exists() }
+                ?: rootProject.file("upload-keystore.jks").takeIf { it.exists() }
                 ?: rootProject.file("android/app/upload-keystore.jks").takeIf { it.exists() }
-
-            if (ksFile != null && ksFile.exists()) {
-                keyAlias = alias
-                keyPassword = pass
-                storePassword = storePass
-                storeFile = ksFile
-            } else {
-                initWith(getByName("debug"))
-            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            val relConfig = signingConfigs.getByName("release")
+            signingConfig = if (relConfig.storeFile != null && relConfig.storeFile!.exists()) {
+                relConfig
+            } else {
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = false
             isShrinkResources = false
         }
