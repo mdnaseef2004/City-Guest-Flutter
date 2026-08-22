@@ -6,12 +6,14 @@ pluginManagement {
             if (localPropertiesFile.exists()) {
                 localPropertiesFile.inputStream().use { properties.load(it) }
             }
-            val flutterSdkPath = properties.getProperty("flutter.sdk")
-                ?: System.getenv("FLUTTER_ROOT")
-                ?: System.getenv("FLUTTER_HOME")
-                ?: System.getenv("FLUTTER_PATH")
-            require(flutterSdkPath != null) { "flutter.sdk not set in local.properties nor FLUTTER_ROOT" }
-            flutterSdkPath
+            var path = properties.getProperty("flutter.sdk")
+            if (path.isNullOrBlank()) {
+                path = System.getenv("FLUTTER_ROOT")
+                    ?: System.getenv("FLUTTER_HOME")
+                    ?: System.getenv("FLUTTER_PATH")
+            }
+            require(!path.isNullOrBlank()) { "flutter.sdk not set in local.properties nor FLUTTER_ROOT" }
+            path
         }
 
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
