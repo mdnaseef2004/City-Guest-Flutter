@@ -7,6 +7,7 @@ import 'core/scroll_behavior.dart';
 import 'providers/auth_provider.dart';
 import 'providers/guest_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/firebase_messaging_service.dart';
 import 'services/notification_service.dart';
 import 'services/supabase_service.dart';
 import 'views/auth/login_view.dart';
@@ -21,7 +22,9 @@ void main() async {
     await SupabaseService.initialize();
     // Initialize System Tray Notifications & Tap Listeners
     await NotificationService.initLocalNotifications();
-    // Initialize OneSignal Push Notifications (Works when app is completely closed)
+    // Initialize Firebase Cloud Messaging (FCM Push Notifications)
+    await FirebaseMessagingService.initialize();
+    // Initialize OneSignal Push Notifications (Fallback)
     await NotificationService.initOneSignal('YOUR_ONESIGNAL_APP_ID');
   } catch (e) {
     debugPrint('Error initializing services on launch: $e');
