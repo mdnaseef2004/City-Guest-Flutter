@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "245904334234",
+    "project_id": "city-guest",
+    "storage_bucket": "city-guest.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:245904334234:android:00a159b614d98ec822ae23",
+        "android_client_info": {
+          "package_name": "com.markazknowledgecity.cityguest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuiUuuNL0JXRNK2oMsizSNnn4FxOEMRDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
