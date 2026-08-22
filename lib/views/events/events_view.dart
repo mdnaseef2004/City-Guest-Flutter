@@ -9,6 +9,8 @@ import '../../services/event_service.dart';
 import '../../services/export_service.dart';
 import 'add_event_view.dart';
 
+import '../../services/pdf_service.dart';
+
 class EventsView extends StatefulWidget {
   const EventsView({super.key});
 
@@ -44,6 +46,193 @@ class _EventsViewState extends State<EventsView> {
     super.initState();
     _selectedExportColumns = {for (var col in _availableColumns) col['key']!: true};
     _loadEvents();
+  }
+
+  // Super Admin Edit Event Dialog
+  Future<void> _showEditEventDialog(EventModel event) async {
+    final nameCtrl = TextEditingController(text: event.eventName);
+    final placeCtrl = TextEditingController(text: event.eventPlace);
+    final countCtrl = TextEditingController(text: event.membersCount.toString());
+    final orgCtrl = TextEditingController(text: event.organizedBy);
+    final handledCtrl = TextEditingController(text: event.handledBy);
+    final remarksCtrl = TextEditingController(text: event.remarks ?? '');
+    DateTime selectedDate = event.eventDate;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isSubmitting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.edit_note_rounded, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('Edit Event Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: 450,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameCtrl,
+                        decoration: const InputDecoration(labelText: 'Event Name*', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: placeCtrl,
+                        decoration: const InputDecoration(labelText: 'Venue / Place*', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: countCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'Attendees Count*', border: OutlineInputBorder()),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final d = await showDatePicker(
+                                  context: context,
+                                  initialDate: selectedDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                );
+                                if (d != null) {
+                                  setDialogState(() => selectedDate = d);
+                                }
+                              },
+                              child: Container(
+                                height: 55,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.shade400),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                                    const SizedBox(width: 8),
+                                    Text(DateFormat('yyyy-MM-dd').format(selectedDate), style: const TextStyle(fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: orgCtrl,
+                        decoration: const InputDecoration(labelText: 'Organized By*', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: handledCtrl,
+                        decoration: const InputDecoration(labelText: 'Handled By*', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: remarksCtrl,
+                        maxLines: 2,
+                        decoration: const InputDecoration(labelText: 'Remarks / Notes', border: OutlineInputBorder()),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (nameCtrl.text.trim().isEmpty || placeCtrl.text.trim().isEmpty) {
+                            AppUtils.showSnackBar(context, 'Please enter event name and place', isError: true);
+                            return;
+                          }
+                          setDialogState(() => isSubmitting = true);
+                          try {
+                            await EventService.updateEvent(event.id, {
+                              'event_name': nameCtrl.text.trim(),
+                              'event_place': placeCtrl.text.trim(),
+                              'members_count': int.tryParse(countCtrl.text.trim()) ?? event.membersCount,
+                              'organized_by': orgCtrl.text.trim(),
+                              'handled_by': handledCtrl.text.trim(),
+                              'remarks': remarksCtrl.text.trim(),
+                              'event_date': selectedDate.toIso8601String().split('T')[0],
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(ctx);
+                              AppUtils.showSnackBar(context, 'Event details updated successfully!');
+                              _loadEvents();
+                            }
+                          } catch (e) {
+                            if (context.mounted) AppUtils.showSnackBar(context, 'Update failed: $e', isError: true);
+                          } finally {
+                            if (context.mounted) setDialogState(() => isSubmitting = false);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  child: const Text('Save Changes'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Super Admin Delete Event Dialog
+  Future<void> _showDeleteEventDialog(EventModel event) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 10),
+            Text('Delete Event?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text('Are you sure you want to delete "${event.eventName}"? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Delete Event'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await EventService.deleteEvent(event.id);
+        if (mounted) {
+          AppUtils.showSnackBar(context, 'Event deleted successfully');
+          _loadEvents();
+        }
+      } catch (e) {
+        if (mounted) AppUtils.showSnackBar(context, 'Failed to delete event: $e', isError: true);
+      }
+    }
   }
 
   @override
@@ -383,6 +572,7 @@ class _EventsViewState extends State<EventsView> {
 
   @override
   Widget build(BuildContext context) {
+    final isSuperAdmin = Provider.of<AuthProvider>(context).isSuperAdmin;
     final totalEvents = _filteredEvents.length;
     final totalAttendees = _filteredEvents.fold<int>(0, (sum, e) => sum + e.membersCount);
 
@@ -659,19 +849,62 @@ class _EventsViewState extends State<EventsView> {
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                child: ListTile(
-                                  leading: const CircleAvatar(
-                                    backgroundColor: Color(0xFF10B981),
-                                    child: Icon(Icons.event_available_rounded, color: Colors.white, size: 20),
-                                  ),
-                                  title: Text(item.eventName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
-                                  subtitle: Text(
-                                    'Place: ${item.eventPlace} | Members: ${item.membersCount}\nOrganized by: ${item.organizedBy} | Handled by: ${item.handledBy}',
-                                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                  ),
-                                  trailing: Text(
-                                    AppUtils.formatDate(item.eventDate),
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: ListTile(
+                                    leading: const CircleAvatar(
+                                      backgroundColor: Color(0xFF10B981),
+                                      child: Icon(Icons.event_available_rounded, color: Colors.white, size: 20),
+                                    ),
+                                    title: Text(item.eventName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Place: ${item.eventPlace} | Members: ${item.membersCount}\nOrganized by: ${item.organizedBy} | Handled by: ${item.handledBy}',
+                                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        ),
+                                        if (item.remarks != null && item.remarks!.trim().isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Remarks: ${item.remarks}',
+                                            style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          AppUtils.formatDate(item.eventDate),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        // Print / Download Individual Event PDF Button
+                                        IconButton(
+                                          icon: const Icon(Icons.print_rounded, color: Color(0xFF059669), size: 20),
+                                          tooltip: 'Print or Download Event PDF Sheet',
+                                          onPressed: () {
+                                            PdfService.showIndividualEventPrintOrDownloadDialog(context, item);
+                                          },
+                                        ),
+                                        // Super Admin Action Buttons (Edit & Delete)
+                                        if (isSuperAdmin) ...[
+                                          IconButton(
+                                            icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
+                                            tooltip: 'Edit Event Details',
+                                            onPressed: () => _showEditEventDialog(item),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                            tooltip: 'Delete Event',
+                                            onPressed: () => _showDeleteEventDialog(item),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );

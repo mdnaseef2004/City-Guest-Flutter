@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../config/constants.dart';
 import '../core/utils.dart';
+import '../models/event_model.dart';
 import '../models/guest_visit.dart';
 import '../services/notification_service.dart';
 import '../utils/file_saver_helper.dart';
@@ -785,6 +786,361 @@ class PdfService {
               border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
             ),
           ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  // Interactive Print or Download Option Modal Dialog for Individual Event
+  static void showIndividualEventPrintOrDownloadDialog(BuildContext context, EventModel event) {
+    Uint8List? pregeneratedPdfBytes;
+    bool isGeneratingInBackground = true;
+
+    generateIndividualEventPdf(event).then((bytes) {
+      pregeneratedPdfBytes = bytes;
+      isGeneratingInBackground = false;
+    }).catchError((_) {
+      isGeneratingInBackground = false;
+    });
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isProcessing = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.event_note_rounded, color: AppColors.primary, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Event Document Options',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          'Print or download formatted event sheet with logo',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.normal),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Event: ${event.eventName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 4),
+                        Text('Venue: ${event.eventPlace} | Date: ${AppUtils.formatDate(event.eventDate)}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        const SizedBox(height: 4),
+                        Text('Attendees: ${event.membersCount}  •  Organized by: ${event.organizedBy}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Select Action:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 10),
+
+                  // Option 1: Direct Print PDF
+                  InkWell(
+                    onTap: isProcessing
+                        ? null
+                        : () async {
+                            setModalState(() => isProcessing = true);
+                            try {
+                              final pdfBytes = pregeneratedPdfBytes ?? await generateIndividualEventPdf(event);
+                              final cleanName = event.eventName.replaceAll(RegExp(r'[^\w\s\-]'), '').replaceAll(' ', '_');
+                              await Printing.layoutPdf(
+                                onLayout: (_) async => pdfBytes,
+                                name: 'Event_Sheet_$cleanName',
+                              );
+                              if (context.mounted) Navigator.pop(ctx);
+                            } catch (e) {
+                              if (context.mounted) AppUtils.showSnackBar(context, 'Printing failed: $e', isError: true);
+                            } finally {
+                              if (context.mounted) setModalState(() => isProcessing = false);
+                            }
+                          },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFA7F3D0), width: 1.2),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.print_rounded, color: Color(0xFF059669), size: 22),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Print Event Sheet', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF065F46), fontSize: 13)),
+                                Text('Send directly to printer or browser print preview', style: TextStyle(fontSize: 11, color: Color(0xFF047857))),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF059669)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Option 2: Download PDF File
+                  InkWell(
+                    onTap: isProcessing
+                        ? null
+                        : () async {
+                            setModalState(() => isProcessing = true);
+                            try {
+                              final pdfBytes = pregeneratedPdfBytes ?? await generateIndividualEventPdf(event);
+                              final cleanName = event.eventName.replaceAll(RegExp(r'[^\w\s\-]'), '').replaceAll(' ', '_');
+                              final filename = 'Event_Sheet_${cleanName}_${DateFormat('yyyyMMdd').format(event.eventDate)}.pdf';
+
+                              await FileSaverHelper.downloadFile(
+                                bytes: pdfBytes,
+                                filename: filename,
+                                mimeType: 'application/pdf',
+                              );
+                              if (context.mounted) {
+                                Navigator.pop(ctx);
+                                NotificationService.notifyFileAction(
+                                  context,
+                                  actionLabel: 'downloaded',
+                                  filename: filename,
+                                  isSuccess: true,
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                NotificationService.notifyFileAction(
+                                  context,
+                                  actionLabel: 'download',
+                                  filename: 'Event PDF',
+                                  isSuccess: false,
+                                  errorMessage: e.toString(),
+                                );
+                              }
+                            } finally {
+                              if (context.mounted) setModalState(() => isProcessing = false);
+                            }
+                          },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF2563EB), size: 22),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Download PDF Document', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E40AF), fontSize: 13)),
+                                Text('Save high-quality PDF with MKC logo to device', style: TextStyle(fontSize: 11, color: Color(0xFF1D4ED8))),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF2563EB)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Generate Individual Event PDF with Official Markaz Knowledge City Logo
+  static Future<Uint8List> generateIndividualEventPdf(EventModel event) async {
+    final pdf = pw.Document();
+    final logoImage = await _getLogoImage();
+    const primaryColor = PdfColor.fromInt(0xFF047857); // Deep Emerald Green
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Header Card with Official Logo
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.white,
+                  border: pw.Border.all(color: primaryColor, width: 2),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (logoImage != null)
+                      pw.Image(logoImage, height: 60)
+                    else
+                      pw.Text(
+                        'MARKAZ KNOWLEDGE CITY',
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'OFFICIAL EVENT SHEET',
+                          style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Date: ${AppUtils.formatDate(event.eventDate)}',
+                          style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                        ),
+                        pw.Text(
+                          'Ref ID: EVT-${event.id.substring(0, math.min(8, event.id.length)).toUpperCase()}',
+                          style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 20),
+
+              // Title Section Banner
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                decoration: pw.BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Text(
+                  event.eventName.toUpperCase(),
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.white,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+
+              // Detailed Event Information Table Grid
+              pw.Container(
+                padding: const pw.EdgeInsets.all(16),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _buildPdfRow('Event Name:', event.eventName),
+                    pw.Divider(color: PdfColors.grey200),
+                    _buildPdfRow('Venue / Place:', event.eventPlace),
+                    pw.Divider(color: PdfColors.grey200),
+                    _buildPdfRow('Event Date:', DateFormat('EEEE, MMMM dd, yyyy').format(event.eventDate)),
+                    pw.Divider(color: PdfColors.grey200),
+                    _buildPdfRow('Expected Attendees:', '${event.membersCount} Members'),
+                    pw.Divider(color: PdfColors.grey200),
+                    _buildPdfRow('Organized By:', event.organizedBy),
+                    pw.Divider(color: PdfColors.grey200),
+                    _buildPdfRow('Handled By:', event.handledBy),
+                    if (event.remarks != null && event.remarks!.trim().isNotEmpty) ...[
+                      pw.Divider(color: PdfColors.grey200),
+                      _buildPdfRow('Special Remarks:', event.remarks!.trim()),
+                    ],
+                  ],
+                ),
+              ),
+
+              pw.Spacer(),
+
+              // Footer Stamp & Signatures
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey400),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Event Organizer Signature', style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey400),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Authorized Authority Stamp', style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 12),
+              pw.Center(
+                child: pw.Text(
+                  'Markaz Knowledge City • Guest Relation Management System • Confidential',
+                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+                ),
+              ),
+            ],
+          );
         },
       ),
     );

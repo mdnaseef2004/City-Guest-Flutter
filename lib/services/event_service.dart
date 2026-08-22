@@ -45,4 +45,14 @@ class EventService {
     final data = await query.order('event_date', ascending: false);
     return (data as List).map((json) => EventModel.fromJson(json)).toList();
   }
+
+  // Update Event
+  static Future<void> updateEvent(String id, Map<String, dynamic> updates) async {
+    await _client.from('events').update(updates).eq('id', id);
+  }
+
+  // Delete Event
+  static Future<void> deleteEvent(String id) async {
+    await _client.from('events').delete().eq('id', id);
+  }
 }
