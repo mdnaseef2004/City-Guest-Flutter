@@ -51,10 +51,10 @@ android {
     buildTypes {
         release {
             val relConfig = signingConfigs.getByName("release")
-            signingConfig = if (relConfig.storeFile != null && relConfig.storeFile!.exists()) {
-                relConfig
+            if (relConfig.storeFile?.exists() == true) {
+                signingConfig = relConfig
             } else {
-                signingConfigs.getByName("debug")
+                signingConfig = signingConfigs.getByName("debug")
             }
             isMinifyEnabled = false
             isShrinkResources = false
