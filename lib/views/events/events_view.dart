@@ -935,69 +935,198 @@ class _EventsViewState extends State<EventsView> {
                             itemBuilder: (context, index) {
                               final item = _filteredEvents[index];
                               return Card(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  side: BorderSide(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? const Color(0xFF334155)
+                                        : const Color(0xFFE2E8F0),
+                                    width: 1,
+                                  ),
+                                ),
+                                elevation: 2,
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                  child: ListTile(
-                                    leading: const CircleAvatar(
-                                      backgroundColor: Color(0xFF10B981),
-                                      child: Icon(Icons.event_available_rounded, color: Colors.white, size: 20),
-                                    ),
-                                    title: Text(item.eventName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Place: ${item.eventPlace} | Members: ${item.membersCount}\nOrganized by: ${item.organizedBy} | Handled by: ${item.handledBy}',
-                                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                        ),
-                                        if (item.remarks != null && item.remarks!.trim().isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Top Row: Icon + Event Name + Date Pill
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const CircleAvatar(
+                                            radius: 18,
+                                            backgroundColor: Color(0xFF10B981),
+                                            child: Icon(Icons.event_available_rounded, color: Colors.white, size: 20),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.eventName,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 15,
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primary),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        item.eventPlace,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                                            ),
+                                            child: Text(
+                                              AppUtils.formatDate(item.eventDate),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF059669),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      const SizedBox(height: 10),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 10),
+
+                                      // Middle Grid / Info Chips
+                                      Wrap(
+                                        spacing: 12,
+                                        runSpacing: 6,
+                                        children: [
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.groups_outlined, size: 15, color: Colors.blue),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Members: ${item.membersCount}',
+                                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.business_center_outlined, size: 15, color: Colors.amber),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Organized: ${item.organizedBy}',
+                                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.person_outline, size: 15, color: Colors.purple),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Handled: ${item.handledBy}',
+                                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+
+                                      if (item.remarks != null && item.remarks!.trim().isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
                                             'Remarks: ${item.remarks}',
-                                            style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontStyle: FontStyle.italic,
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            ),
                                           ),
-                                        ],
-                                      ],
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          AppUtils.formatDate(item.eventDate),
-                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                         ),
-                                        const SizedBox(width: 6),
-                                        // Print / Download Individual Event PDF Button
-                                        IconButton(
-                                          icon: const Icon(Icons.print_rounded, color: Color(0xFF059669), size: 20),
-                                          tooltip: 'Print or Download Event PDF Sheet',
-                                          onPressed: () {
-                                            PdfService.showIndividualEventPrintOrDownloadDialog(context, item);
-                                          },
-                                        ),
-                                        // Super Admin Action Buttons (Remark, Edit & Delete)
-                                        if (isSuperAdmin) ...[
-                                          IconButton(
-                                            icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF8B5CF6), size: 20),
-                                            tooltip: 'Add Remark / Send Feedback to Creator',
-                                            onPressed: () => _showSendRemarkDialog(item),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
-                                            tooltip: 'Edit Event Details',
-                                            onPressed: () => _showEditEventDialog(item),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                                            tooltip: 'Delete Event',
-                                            onPressed: () => _showDeleteEventDialog(item),
-                                          ),
-                                        ],
                                       ],
-                                    ),
+
+                                      const SizedBox(height: 10),
+
+                                      // Action Buttons Row (Print PDF, Remark, Edit, Delete)
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          ElevatedButton.icon(
+                                            icon: const Icon(Icons.print_rounded, size: 16),
+                                            label: const Text('Print PDF', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF059669),
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              minimumSize: Size.zero,
+                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            ),
+                                            onPressed: () {
+                                              PdfService.showIndividualEventPrintOrDownloadDialog(context, item);
+                                            },
+                                          ),
+                                          if (isSuperAdmin) ...[
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF8B5CF6), size: 20),
+                                              tooltip: 'Add Remark / Send Feedback',
+                                              constraints: const BoxConstraints(),
+                                              padding: const EdgeInsets.all(6),
+                                              onPressed: () => _showSendRemarkDialog(item),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
+                                              tooltip: 'Edit Event Details',
+                                              constraints: const BoxConstraints(),
+                                              padding: const EdgeInsets.all(6),
+                                              onPressed: () => _showEditEventDialog(item),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                              tooltip: 'Delete Event',
+                                              constraints: const BoxConstraints(),
+                                              padding: const EdgeInsets.all(6),
+                                              onPressed: () => _showDeleteEventDialog(item),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
