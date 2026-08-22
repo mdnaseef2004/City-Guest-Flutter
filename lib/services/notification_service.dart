@@ -81,6 +81,8 @@ class NotificationService {
       channelDescription: 'Realtime notifications for City Guest tasks and updates',
       importance: Importance.max,
       priority: Priority.high,
+      visibility: NotificationVisibility.public,
+      fullScreenIntent: true,
       playSound: true,
       enableVibration: true,
       icon: '@mipmap/ic_launcher',
