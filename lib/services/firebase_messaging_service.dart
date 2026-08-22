@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'notification_service.dart';
 import 'supabase_service.dart';
 
@@ -60,6 +62,13 @@ class FirebaseMessagingService {
         messaging.onTokenRefresh.listen(_saveTokenToSupabase);
       }
 
+      // Enable foreground notification presentation options
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       // Handle FCM messages when app is in Foreground
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         final title = message.notification?.title ?? message.data['title'] ?? 'City Guest Alert';
@@ -79,6 +88,49 @@ class FirebaseMessagingService {
 
     } catch (e) {
       debugPrint('Firebase messaging initialization skipped or failed: $e');
+    }
+  }
+
+  // Send FCM Push Notification directly to a target user's FCM device token
+  static Future<void> sendFcmPushToUser(String targetUserId, String title, String body) async {
+    if (kIsWeb) return;
+    try {
+      final res = await SupabaseService.client
+          .from('profiles')
+          .select('fcm_token')
+          .eq('id', targetUserId)
+          .maybeSingle();
+
+      final token = res?['fcm_token']?.toString();
+      if (token == null || token.isEmpty) return;
+
+      const fcmUrl = 'https://fcm.googleapis.com/fcm/send';
+      const serverKey = 'AIzaSyBuiUuuNL0JXRNK2oMsizSNnn4FxOEMRDQ';
+
+      await http.post(
+        Uri.parse(fcmUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+        body: jsonEncode({
+          'to': token,
+          'priority': 'high',
+          'notification': {
+            'title': title,
+            'body': body,
+            'sound': 'default',
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+          },
+          'data': {
+            'title': title,
+            'message': body,
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+          },
+        }),
+      );
+    } catch (e) {
+      debugPrint('FCM REST push error: $e');
     }
   }
 

@@ -7,6 +7,8 @@ import '../config/constants.dart';
 import '../services/supabase_service.dart';
 import 'audio_helper.dart';
 
+import 'firebase_messaging_service.dart';
+
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -59,11 +61,21 @@ class NotificationService {
       },
     );
 
-    // Request Android 13+ Notification Permission
+    // Request Android 13+ Notification Permission & Create High Importance Channel
     final androidPlugin = _localNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
       await androidPlugin.requestNotificationsPermission();
+      
+      const channel = AndroidNotificationChannel(
+        'city_guest_channel_v2',
+        'City Guest Notifications',
+        description: 'Realtime notifications for City Guest tasks and updates',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
+      await androidPlugin.createNotificationChannel(channel);
     }
   }
 
@@ -181,7 +193,7 @@ class NotificationService {
     );
   }
 
-  // Insert Notification into database for permanent storage in Notification Centre
+  // Insert Notification into database for permanent storage in Notification Centre & send FCM Push Notification
   static Future<void> saveNotification({
     required String userId,
     required String title,
@@ -197,6 +209,9 @@ class NotificationService {
         'is_read': false,
         'created_at': DateTime.now().toIso8601String(),
       });
+
+      // Dispatch FCM Push Notification to target device (Wakes screen & shows status bar alert when app is closed!)
+      FirebaseMessagingService.sendFcmPushToUser(userId, title, message);
     } catch (_) {}
   }
 
