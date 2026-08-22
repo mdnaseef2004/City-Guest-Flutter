@@ -91,13 +91,15 @@ class _DashboardViewState extends State<DashboardView> {
 
   Future<void> _loadStats() async {
     final isSuperAdmin = Provider.of<AuthProvider>(context, listen: false).isSuperAdmin;
-    final stats = await GuestService.getDashboardStats(isSuperAdmin);
-    final todayList = await GuestService.getTodayGuests(isSuperAdmin);
+    final results = await Future.wait<dynamic>(<Future<dynamic>>[
+      GuestService.getDashboardStats(isSuperAdmin),
+      GuestService.getTodayGuests(isSuperAdmin),
+    ]);
     
     if (mounted) {
       setState(() {
-        _stats = stats;
-        _todayGuestsList = todayList;
+        _stats = results[0] as Map<String, dynamic>;
+        _todayGuestsList = results[1] as List<GuestVisit>;
         _isLoading = false;
         _updateCachedCalculations();
       });
@@ -107,10 +109,14 @@ class _DashboardViewState extends State<DashboardView> {
   Future<void> _loadStatsSilent() async {
     if (!mounted) return;
     final isSuperAdmin = Provider.of<AuthProvider>(context, listen: false).isSuperAdmin;
-    final stats = await GuestService.getDashboardStats(isSuperAdmin);
-    final todayList = await GuestService.getTodayGuests(isSuperAdmin);
+    final results = await Future.wait<dynamic>(<Future<dynamic>>[
+      GuestService.getDashboardStats(isSuperAdmin),
+      GuestService.getTodayGuests(isSuperAdmin),
+    ]);
     
     if (mounted) {
+      final stats = results[0] as Map<String, dynamic>;
+      final todayList = results[1] as List<GuestVisit>;
       if (stats.toString() != _stats.toString() || todayList.length != _todayGuestsList.length) {
         setState(() {
           _stats = stats;

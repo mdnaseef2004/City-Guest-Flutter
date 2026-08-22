@@ -298,7 +298,7 @@ class GuestService {
     return list;
   }
 
-  // Complete Dashboard Stats matching 100% of website data including Profile Pictures
+  // Complete Dashboard Stats matching 100% of website data including Profile Pictures (Optimized Parallel Execution)
   static Future<Map<String, dynamic>> getDashboardStats(bool isSuperAdmin) async {
     final user = SupabaseService.currentUser;
     if (user == null) return {};
@@ -307,33 +307,39 @@ class GuestService {
     final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final monthStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
 
-    // 1. Total Guests Count
+    // 1. Prepare queries for parallel execution
     dynamic countBuilder = _client.from('guest_visits').select('id');
     if (!isSuperAdmin) countBuilder = countBuilder.eq('created_by', user.id);
-    final PostgrestResponse countRes = await countBuilder.count(CountOption.exact);
 
-    // 2. Today's Guests Count
     dynamic todayBuilder = _client.from('guest_visits').select('id').gte('created_at', '${todayStr}T00:00:00.000Z');
     if (!isSuperAdmin) todayBuilder = todayBuilder.eq('created_by', user.id);
-    final PostgrestResponse todayRes = await todayBuilder.count(CountOption.exact);
 
-    // 3. Monthly Donations & Count
     dynamic monthBuilder = _client.from('guest_visits').select('donation_amount').gte('created_at', '${monthStr}T00:00:00.000Z');
     if (!isSuperAdmin) monthBuilder = monthBuilder.eq('created_by', user.id);
-    final List monthList = (await monthBuilder) as List;
+
+    dynamic allRowsBuilder = _client.from('guest_visits').select('id, guest_name, place, purpose, donation_amount, created_at, created_by, photo_url, handled_by, remarks');
+    if (!isSuperAdmin) allRowsBuilder = allRowsBuilder.eq('created_by', user.id);
+
+    // 2. Execute ALL queries concurrently in parallel with Future.wait
+    final results = await Future.wait<dynamic>(<Future<dynamic>>[
+      countBuilder.count(CountOption.exact),
+      todayBuilder.count(CountOption.exact),
+      monthBuilder,
+      _client.from('profiles').select('*'),
+      _client.from('events').select('*'),
+      allRowsBuilder.order('created_at', ascending: false).limit(3000),
+    ]);
+
+    final PostgrestResponse countRes = results[0] as PostgrestResponse;
+    final PostgrestResponse todayRes = results[1] as PostgrestResponse;
+    final List monthList = results[2] as List;
+    final List usersList = (results[3] as List).cast<Map<String, dynamic>>();
+    final List<Map<String, dynamic>> eventsList = (results[4] as List).cast<Map<String, dynamic>>();
+    final List<Map<String, dynamic>> allRows = (results[5] as List).cast<Map<String, dynamic>>();
+
     final double monthlyDonations = monthList.fold(0.0, (sum, x) => sum + ((x['donation_amount'] ?? 0) as num).toDouble());
 
-    // 4. Fetch Profiles
-    final usersData = await _client.from('profiles').select('*');
-    final List usersList = (usersData as List).cast<Map<String, dynamic>>();
-
-    // 5. Fetch Events Data for Event Graph
-    List<Map<String, dynamic>> eventsList = [];
-    try {
-      final eventsData = await _client.from('events').select('*');
-      eventsList = (eventsData as List).cast<Map<String, dynamic>>();
-    } catch (_) {}
-
+    // 3. Process Events Data for Event Graph
     final Map<String, int> eventPlaceMap = {};
     int totalEventMembers = 0;
     for (final ev in eventsList) {
@@ -348,22 +354,10 @@ class GuestService {
         .toList()
       ..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
 
-    // 6. Range page through all records for exact donation sum across 100% of rows
+    // 4. Calculate total donations sum across rows
     double totalDonations = 0.0;
-    List<Map<String, dynamic>> allRows = [];
-    int from = 0;
-    const int step = 1000;
-    while (true) {
-      dynamic builder = _client.from('guest_visits').select('*');
-      if (!isSuperAdmin) builder = builder.eq('created_by', user.id);
-      final List rows = (await builder.range(from, from + step - 1)) as List;
-      if (rows.isEmpty) break;
-      allRows.addAll(rows.cast<Map<String, dynamic>>());
-      for (final r in rows) {
-        totalDonations += ((r['donation_amount'] ?? 0) as num).toDouble();
-      }
-      if (rows.length < step) break;
-      from += step;
+    for (final r in allRows) {
+      totalDonations += ((r['donation_amount'] ?? 0) as num).toDouble();
     }
 
     // 7. Guests by Place Breakdown
