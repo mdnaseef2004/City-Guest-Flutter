@@ -228,6 +228,17 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                     };
 
                     await GuestService.updateGuest(guest.id, updates, guest.visitedPlaces);
+
+                    if (isSuperAdmin && remarksController.text.trim().isNotEmpty && guest.createdBy != null) {
+                      final superAdminName = Provider.of<AuthProvider>(context, listen: false).profile?.name ?? 'Super Admin';
+                      await NotificationService.sendRemarkToAdmin(
+                        targetUserId: guest.createdBy!,
+                        remarkText: remarksController.text.trim(),
+                        superAdminName: superAdminName,
+                        recordTitle: 'Guest: ${guest.guestName}',
+                      );
+                    }
+
                     if (mounted) {
                       Navigator.pop(ctx);
                       AppUtils.showSnackBar(context, 'Guest updated successfully!');

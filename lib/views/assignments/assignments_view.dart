@@ -19,7 +19,7 @@ class AssignmentsView extends StatefulWidget {
 class _AssignmentsViewState extends State<AssignmentsView> {
   bool _isLoading = true;
   List<GuestAssignment> _assignments = [];
-  List<Profile> _subAdmins = [];
+  List<Profile> _assignableUsers = [];
 
   @override
   void initState() {
@@ -36,7 +36,7 @@ class _AssignmentsViewState extends State<AssignmentsView> {
       final list = await AssignmentService.getAssignments(isSuperAdmin);
       if (isSuperAdmin) {
         final users = await SupabaseService.getUsers();
-        _subAdmins = users.where((u) => u.role == 'sub_admin').toList();
+        _assignableUsers = users.where((u) => u.isActive).toList();
       }
       if (mounted) {
         setState(() {
@@ -52,42 +52,69 @@ class _AssignmentsViewState extends State<AssignmentsView> {
   void _showNewAssignmentDialog() {
     final guestNameController = TextEditingController();
     final notesController = TextEditingController();
-    String? selectedSubAdminId;
+    String? selectedUserId;
     bool isUrgent = false;
 
     showDialog(
       context: context,
       builder: (ctx) {
+        bool isSubmitting = false;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Assign Guest Task'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.assignment_ind_rounded, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('Assign Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: guestNameController,
-                      decoration: const InputDecoration(labelText: 'Guest Name *'),
+                      decoration: const InputDecoration(labelText: 'Task / Guest Name *', border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: selectedSubAdminId,
-                      decoration: const InputDecoration(labelText: 'Assign To (Sub Admin) *'),
-                      items: _subAdmins.map((u) {
-                        return DropdownMenuItem(value: u.id, child: Text(u.name));
-                      }).toList(),
-                      onChanged: (val) => setDialogState(() => selectedSubAdminId = val),
+                      value: selectedUserId,
+                      decoration: const InputDecoration(labelText: 'Assign To *', border: OutlineInputBorder()),
+                      items: [
+                        const DropdownMenuItem(
+                          value: 'ALL_USERS',
+                          child: Text(
+                            '🌟 ALL USERS (Broadcast Task to Everyone)',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                          ),
+                        ),
+                        ..._assignableUsers.map((u) {
+                          final roleBadge = u.role == 'super_admin'
+                              ? ' (Super Admin)'
+                              : u.role == 'admin'
+                                  ? ' (Admin)'
+                                  : ' (Sub Admin)';
+                          return DropdownMenuItem(
+                            value: u.id,
+                            child: Text('${u.name}$roleBadge'),
+                          );
+                        }),
+                      ],
+                      onChanged: (val) => setDialogState(() => selectedUserId = val),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: notesController,
-                      decoration: const InputDecoration(labelText: 'Notes / Instructions'),
+                      decoration: const InputDecoration(labelText: 'Notes / Instructions', border: OutlineInputBorder()),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 12),
                     CheckboxListTile(
-                      title: const Text('Mark as Urgent 🚨'),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      tileColor: isUrgent ? Colors.red.withValues(alpha: 0.1) : null,
+                      title: const Text('Mark as Urgent 🚨', style: TextStyle(fontWeight: FontWeight.bold)),
                       value: isUrgent,
                       onChanged: (val) => setDialogState(() => isUrgent = val ?? false),
                     ),
@@ -97,42 +124,83 @@ class _AssignmentsViewState extends State<AssignmentsView> {
               actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                 ElevatedButton(
-                  onPressed: () async {
-                    final taskName = guestNameController.text.trim();
-                    final assignedToProfile = _subAdmins.firstWhere(
-                      (u) => u.id == selectedSubAdminId,
-                      orElse: () => Profile(id: selectedSubAdminId!, name: 'Sub Admin', email: '', role: 'sub_admin', isActive: true, createdAt: DateTime.now()),
-                    );
+                  onPressed: (selectedUserId == null || isSubmitting)
+                      ? null
+                      : () async {
+                          final taskName = guestNameController.text.trim();
+                          if (taskName.isEmpty) {
+                            AppUtils.showSnackBar(context, 'Please enter a task / guest name', isError: true);
+                            return;
+                          }
+                          setDialogState(() => isSubmitting = true);
 
-                    await AssignmentService.createAssignment(
-                      guestName: taskName,
-                      notes: notesController.text.trim(),
-                      assignedTo: selectedSubAdminId!,
-                      isUrgent: isUrgent,
-                    );
+                          final creatorName = Provider.of<AuthProvider>(context, listen: false).profile?.name ?? 'Super Admin';
 
-                    final creatorName = Provider.of<AuthProvider>(context, listen: false).profile?.name ?? 'Super Admin';
+                          try {
+                            if (selectedUserId == 'ALL_USERS') {
+                              // Broadcast Task to ALL Users
+                              for (final targetUser in _assignableUsers) {
+                                await AssignmentService.createAssignment(
+                                  guestName: taskName,
+                                  notes: notesController.text.trim(),
+                                  assignedTo: targetUser.id,
+                                  isUrgent: isUrgent,
+                                );
+                                NotificationService.notifyAssignmentCreated(
+                                  assignedUserId: targetUser.id,
+                                  assignmentTitle: taskName,
+                                  assignedByName: creatorName,
+                                );
+                              }
 
-                    if (mounted) {
-                      // Show loud popup notification banner with sound
-                      NotificationService.showNotificationPopup(
-                        context,
-                        title: isUrgent ? 'Urgent Assignment Sent 🚨' : 'Task Assigned Successfully!',
-                        message: 'Assigned "$taskName" to ${assignedToProfile.name}.',
-                        icon: Icons.assignment_ind_rounded,
-                      );
+                              if (mounted) {
+                                NotificationService.showNotificationPopup(
+                                  context,
+                                  title: isUrgent ? 'Urgent Broadcast Sent 🚨' : 'Task Broadcasted!',
+                                  message: 'Assigned "$taskName" to ALL ${_assignableUsers.length} users.',
+                                  icon: Icons.assignment_ind_rounded,
+                                );
+                                Navigator.pop(ctx);
+                                _loadData();
+                              }
+                            } else {
+                              // Assign to specific selected User (Sub Admin, Admin, or Super Admin)
+                              final assignedToProfile = _assignableUsers.firstWhere(
+                                (u) => u.id == selectedUserId,
+                                orElse: () => Profile(id: selectedUserId!, name: 'User', email: '', role: 'user', isActive: true, createdAt: DateTime.now()),
+                              );
 
-                      // Save notification in database for Notification Centre
-                      NotificationService.notifyAssignmentCreated(
-                        assignedUserId: selectedSubAdminId!,
-                        assignmentTitle: taskName,
-                        assignedByName: creatorName,
-                      );
+                              await AssignmentService.createAssignment(
+                                guestName: taskName,
+                                notes: notesController.text.trim(),
+                                assignedTo: selectedUserId!,
+                                isUrgent: isUrgent,
+                              );
 
-                      Navigator.pop(ctx);
-                      _loadData();
-                    }
-                  },
+                              NotificationService.notifyAssignmentCreated(
+                                assignedUserId: selectedUserId!,
+                                assignmentTitle: taskName,
+                                assignedByName: creatorName,
+                              );
+
+                              if (mounted) {
+                                NotificationService.showNotificationPopup(
+                                  context,
+                                  title: isUrgent ? 'Urgent Assignment Sent 🚨' : 'Task Assigned Successfully!',
+                                  message: 'Assigned "$taskName" to ${assignedToProfile.name}.',
+                                  icon: Icons.assignment_ind_rounded,
+                                );
+                                Navigator.pop(ctx);
+                                _loadData();
+                              }
+                            }
+                          } catch (e) {
+                            if (mounted) AppUtils.showSnackBar(context, 'Failed to assign task: $e', isError: true);
+                          } finally {
+                            if (mounted) setDialogState(() => isSubmitting = false);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                   child: const Text('Assign Task'),
                 ),
               ],
@@ -466,8 +534,13 @@ class _AssignmentsViewState extends State<AssignmentsView> {
                     DropdownButtonFormField<String>(
                       value: selectedSubAdminId,
                       decoration: const InputDecoration(labelText: 'Assign To (Sub Admin) *', prefixIcon: Icon(Icons.badge_outlined)),
-                      items: _subAdmins.map((u) {
-                        return DropdownMenuItem(value: u.id, child: Text(u.name));
+                      items: _assignableUsers.map((u) {
+                        final roleBadge = u.role == 'super_admin'
+                            ? ' (Super Admin)'
+                            : u.role == 'admin'
+                                ? ' (Admin)'
+                                : ' (Sub Admin)';
+                        return DropdownMenuItem(value: u.id, child: Text('${u.name}$roleBadge'));
                       }).toList(),
                       onChanged: (val) => setDialogState(() => selectedSubAdminId = val ?? selectedSubAdminId),
                     ),

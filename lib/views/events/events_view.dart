@@ -9,6 +9,7 @@ import '../../services/event_service.dart';
 import '../../services/export_service.dart';
 import 'add_event_view.dart';
 
+import '../../services/notification_service.dart';
 import '../../services/pdf_service.dart';
 
 class EventsView extends StatefulWidget {
@@ -188,6 +189,93 @@ class _EventsViewState extends State<EventsView> {
                         },
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                   child: const Text('Save Changes'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Super Admin Send Remark / Comment Dialog on Event
+  Future<void> _showSendRemarkDialog(EventModel event) async {
+    final remarkCtrl = TextEditingController(text: event.remarks ?? '');
+    final superAdminName = Provider.of<AuthProvider>(context, listen: false).profile?.name ?? 'Super Admin';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isSubmitting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.comment_rounded, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('Add Remark / Feedback', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Event: "${event.eventName}"', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text('Handled by: ${event.handledBy}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: remarkCtrl,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Type your remark, thank you note, or instructions...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                ElevatedButton.icon(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final text = remarkCtrl.text.trim();
+                          if (text.isEmpty) {
+                            AppUtils.showSnackBar(context, 'Please enter a remark comment', isError: true);
+                            return;
+                          }
+                          setDialogState(() => isSubmitting = true);
+                          try {
+                            // Update remarks in Supabase
+                            await EventService.updateEvent(event.id, {'remarks': text});
+
+                            // If event creator ID is present, notify them!
+                            if (event.createdBy != null && event.createdBy!.isNotEmpty) {
+                              await NotificationService.sendRemarkToAdmin(
+                                targetUserId: event.createdBy!,
+                                remarkText: text,
+                                superAdminName: superAdminName,
+                                recordTitle: 'Event: ${event.eventName}',
+                              );
+                            }
+
+                            if (context.mounted) {
+                              Navigator.pop(ctx);
+                              AppUtils.showSnackBar(context, 'Remark saved & notification sent to admin!');
+                              _loadEvents();
+                            }
+                          } catch (e) {
+                            if (context.mounted) AppUtils.showSnackBar(context, 'Failed to send remark: $e', isError: true);
+                          } finally {
+                            if (context.mounted) setDialogState(() => isSubmitting = false);
+                          }
+                        },
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: const Text('Send Remark'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                 ),
               ],
             );
@@ -890,8 +978,13 @@ class _EventsViewState extends State<EventsView> {
                                             PdfService.showIndividualEventPrintOrDownloadDialog(context, item);
                                           },
                                         ),
-                                        // Super Admin Action Buttons (Edit & Delete)
+                                        // Super Admin Action Buttons (Remark, Edit & Delete)
                                         if (isSuperAdmin) ...[
+                                          IconButton(
+                                            icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF8B5CF6), size: 20),
+                                            tooltip: 'Add Remark / Send Feedback to Creator',
+                                            onPressed: () => _showSendRemarkDialog(item),
+                                          ),
                                           IconButton(
                                             icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
                                             tooltip: 'Edit Event Details',

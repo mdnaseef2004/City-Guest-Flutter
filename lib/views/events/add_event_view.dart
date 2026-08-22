@@ -4,6 +4,8 @@ import '../../core/utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/event_service.dart';
 
+import '../../services/notification_service.dart';
+
 class AddEventView extends StatefulWidget {
   const AddEventView({super.key});
 
@@ -57,6 +59,13 @@ class _AddEventViewState extends State<AddEventView> {
         eventDate: _eventDate,
         handledBy: _handledByController.text.trim(),
         remarks: _remarksController.text.trim(),
+      );
+
+      final currentUserName = Provider.of<AuthProvider>(context, listen: false).profile?.name ?? 'Admin';
+      await NotificationService.notifyEventAdded(
+        adminName: currentUserName,
+        eventName: _eventNameController.text.trim(),
+        place: _eventPlaceController.text.trim(),
       );
 
       if (mounted) {

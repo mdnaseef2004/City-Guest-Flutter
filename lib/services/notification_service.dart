@@ -257,7 +257,36 @@ class NotificationService {
     } catch (_) {}
   }
 
-  // Super Admin sends Remark / Thank You Comment to a Sub Admin
+  // Notify Super Admins when an Admin or Sub Admin adds an Event
+  static Future<void> notifyEventAdded({
+    required String adminName,
+    required String eventName,
+    required String place,
+  }) async {
+    final currentUserId = SupabaseService.currentUser?.id;
+    final message = '$adminName has added a new event: "$eventName" at $place.';
+    const title = 'New Event Recorded';
+
+    try {
+      final profiles = await SupabaseService.client.from('profiles').select('id, email, role');
+      for (final p in (profiles as List)) {
+        final id = p['id']?.toString();
+        final email = p['email']?.toString().toLowerCase().trim() ?? '';
+        final role = p['role']?.toString();
+
+        if (id != null && (role == 'super_admin' || superAdminEmails.contains(email) || id == currentUserId)) {
+          await saveNotification(
+            userId: id,
+            title: title,
+            message: message,
+            type: 'info',
+          );
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Super Admin sends Remark / Thank You Comment to an Admin or Sub Admin
   static Future<void> sendRemarkToSubAdmin({
     required String subAdminUserId,
     required String remarkText,
@@ -269,6 +298,24 @@ class NotificationService {
 
     await saveNotification(
       userId: subAdminUserId,
+      title: title,
+      message: message,
+      type: 'info',
+    );
+  }
+
+  // Super Admin sends Remark / Feedback Comment on Guest or Event Record to Admin
+  static Future<void> sendRemarkToAdmin({
+    required String targetUserId,
+    required String remarkText,
+    required String superAdminName,
+    required String recordTitle,
+  }) async {
+    final title = '💬 Super Admin Remark on "$recordTitle"';
+    final message = '$superAdminName: "$remarkText"';
+
+    await saveNotification(
+      userId: targetUserId,
       title: title,
       message: message,
       type: 'info',
