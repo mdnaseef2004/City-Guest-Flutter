@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/constants.dart';
 import '../../core/utils.dart';
 import '../../models/profile.dart';
@@ -106,7 +107,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                         _loadUsers();
                       }
                     } catch (e) {
-                      String msg = e.toString();
+                      String msg = e is AuthException ? e.message : e.toString();
                       if (msg.contains('Exception:')) {
                         msg = msg.replaceAll('Exception:', '').trim();
                       }

@@ -144,18 +144,21 @@ class SupabaseService {
   }) async {
     final cleanEmail = email.trim().toLowerCase();
 
-    // Check if email already exists in public profiles table
-    final existingProfile = await client
-        .from('profiles')
-        .select('id')
-        .eq('email', cleanEmail)
-        .maybeSingle();
+    // 1. Check if profile with email already exists in public.profiles
+    try {
+      final existingProfile = await client
+          .from('profiles')
+          .select('id')
+          .eq('email', cleanEmail)
+          .maybeSingle();
 
-    if (existingProfile != null) {
-      throw Exception('An admin account with email "$cleanEmail" already exists.');
+      if (existingProfile != null) {
+        throw Exception('An admin account with email "$cleanEmail" already exists.');
+      }
+    } catch (e) {
+      if (e.toString().contains('already exists')) rethrow;
     }
 
-    // Use a separate SupabaseClient instance so active Super Admin session is not affected
     final tempClient = SupabaseClient(
       AppConstants.supabaseUrl,
       AppConstants.supabaseAnonKey,
@@ -174,10 +177,9 @@ class SupabaseService {
       if (response.user != null) {
         userId = response.user!.id;
       }
-    } catch (e) {
-      final errStr = e.toString();
-
-      // If user was registered in auth.users during previous attempts, try logging in with tempClient
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      // If user is already registered in Supabase Auth, try signing in with provided password
       try {
         final signInRes = await tempClient.auth.signInWithPassword(
           email: cleanEmail,
@@ -187,65 +189,23 @@ class SupabaseService {
           userId = signInRes.user!.id;
         }
       } catch (_) {
-        if (errStr.contains('already registered') || errStr.contains('User already exists')) {
-          throw Exception('An account with email "$cleanEmail" is already registered in Auth. Please try a different email or sign in.');
+        if (msg.contains('already registered') ||
+            msg.contains('already exists') ||
+            msg.contains('user_already_exists') ||
+            e.statusCode == '422') {
+          throw Exception('The email "$cleanEmail" is already registered in Supabase Auth. Please try a different email address.');
         }
-        if (errStr.contains('Database error saving new user') || errStr.contains('unexpected_failure')) {
-          // Check if profile was inserted despite trigger error
-          try {
-            final profCheck = await client
-                .from('profiles')
-                .select('id')
-                .eq('email', cleanEmail)
-                .maybeSingle();
-            if (profCheck != null) {
-              userId = profCheck['id'] as String;
-            }
-          } catch (_) {}
-
-          if (userId == null) {
-            throw Exception('Database Trigger Error in Supabase. Please run the SQL Fix in Supabase SQL Editor to drop the conflicting trigger.');
-          }
-        } else {
-          rethrow;
-        }
+        throw Exception(e.message);
       }
+    } catch (e) {
+      final errStr = e.toString();
+      if (errStr.contains('already registered') || errStr.contains('already exists')) {
+        throw Exception('The email "$cleanEmail" is already registered in Supabase Auth. Please try a different email address.');
+      }
+      throw Exception(e.toString().replaceAll('Exception:', '').trim());
     }
 
     if (userId == null) {
-      throw Exception('Could not retrieve user ID from Auth. Please check email address and try again.');
-    }
-
-    // Safely update or insert profile in public.profiles table
-    try {
-      final existingProf = await client
-          .from('profiles')
-          .select('id')
-          .or('id.eq.$userId,email.eq.$cleanEmail')
-          .maybeSingle();
-
-      if (existingProf != null) {
-        await client.from('profiles').update({
-          'name': name.trim(),
-          'email': cleanEmail,
-          'role': role,
-          'is_active': true,
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', existingProf['id']);
-      } else {
-        await client.from('profiles').insert({
-          'id': userId,
-          'name': name.trim(),
-          'email': cleanEmail,
-          'role': role,
-          'is_active': true,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-      }
-    } catch (_) {
-      try {
-        await client.from('profiles').update({
-          'name': name.trim(),
           'email': cleanEmail,
           'role': role,
           'is_active': true,
