@@ -118,9 +118,9 @@ class SupabaseService {
 
   // Delete Admin User Account from Database (Preserving Guest & Event Records)
   static Future<void> deleteUser(String userId) async {
-    // 1. Unlink created_by in guests and events to preserve all guest and event data
+    // 1. Unlink created_by in guest_visits and events to preserve all guest and event data
     try {
-      await client.from('guests').update({'created_by': null}).eq('created_by', userId);
+      await client.from('guest_visits').update({'created_by': null}).eq('created_by', userId);
     } catch (_) {}
 
     try {
@@ -130,9 +130,11 @@ class SupabaseService {
     // 2. Delete from auth.users & public.profiles using RPC or direct deletion
     try {
       await client.rpc('delete_user_by_admin', params: {'user_id': userId});
-    } catch (_) {
+    } catch (_) {}
+
+    try {
       await client.from('profiles').delete().eq('id', userId);
-    }
+    } catch (_) {}
   }
 
   // Create New Sub Admin / Super Admin User Account
@@ -153,7 +155,7 @@ class SupabaseService {
           .maybeSingle();
 
       if (existingProfile != null) {
-        throw Exception('An admin account with email "$cleanEmail" already exists.');
+        throw Exception('An admin account with email "$cleanEmail" already exists in database.');
       }
     } catch (e) {
       if (e.toString().contains('already exists')) rethrow;
@@ -171,12 +173,10 @@ class SupabaseService {
       final response = await tempClient.auth.signUp(
         email: cleanEmail,
         password: password,
-        data: {'name': name, 'role': role},
+        data: {'name': name.trim(), 'role': role},
       );
 
-      if (response.user != null) {
-        userId = response.user!.id;
-      }
+      userId = response.user?.id;
     } on AuthException catch (e) {
       final msg = e.message.toLowerCase();
       // If user is already registered in Supabase Auth, try signing in with provided password
@@ -185,9 +185,7 @@ class SupabaseService {
           email: cleanEmail,
           password: password,
         );
-        if (signInRes.user != null) {
-          userId = signInRes.user!.id;
-        }
+        userId = signInRes.user?.id;
       } catch (_) {
         if (msg.contains('already registered') ||
             msg.contains('already exists') ||
@@ -202,11 +200,25 @@ class SupabaseService {
       if (errStr.contains('already registered') || errStr.contains('already exists')) {
         throw Exception('The email "$cleanEmail" is already registered in Supabase Auth. Please try a different email address.');
       }
-      throw Exception(e.toString().replaceAll('Exception:', '').trim());
+      throw Exception(errStr.replaceAll('Exception:', '').trim());
+    }
+
+    // Fallback: Check if profile or auth created user ID
+    if (userId == null) {
+      try {
+        final profCheck = await client
+            .from('profiles')
+            .select('id')
+            .eq('email', cleanEmail)
+            .maybeSingle();
+        if (profCheck != null && profCheck['id'] != null) {
+          userId = profCheck['id'].toString();
+        }
+      } catch (_) {}
     }
 
     if (userId == null) {
-      throw Exception('Could not create account for "$cleanEmail". Please check email address and try again.');
+      throw Exception('Could not create user account for "$cleanEmail". Please check email address or try a different password.');
     }
 
     // 2. Insert or update profile in public.profiles table

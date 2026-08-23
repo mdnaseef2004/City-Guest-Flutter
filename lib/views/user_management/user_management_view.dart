@@ -299,7 +299,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: u.isSuperAdmin ? const Color(0xFF059669) : const Color(0xFF4F46E5),
+                              backgroundColor: u.isSuperAdmin ? const Color(0xFF059669) : const Color(0xFF2563EB),
                               child: Text(
                                 u.name.isNotEmpty ? u.name[0].toUpperCase() : 'U',
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
@@ -345,15 +345,15 @@ class _UserManagementViewState extends State<UserManagementView> {
                               decoration: BoxDecoration(
                                 color: u.isSuperAdmin
                                     ? const Color(0xFF059669).withValues(alpha: 0.15)
-                                    : const Color(0xFF4F46E5).withValues(alpha: 0.15),
+                                    : const Color(0xFF2563EB).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                '${u.role.toUpperCase()}  •  ${u.isActive ? "ACTIVE" : "DISABLED"}',
+                                '${u.role.replaceAll("_", " ").toUpperCase()}  •  ${u.isActive ? "ACTIVE" : "DISABLED"}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: u.isSuperAdmin ? const Color(0xFF059669) : const Color(0xFF4F46E5),
+                                  color: u.isSuperAdmin ? const Color(0xFF059669) : const Color(0xFF2563EB),
                                 ),
                               ),
                             ),

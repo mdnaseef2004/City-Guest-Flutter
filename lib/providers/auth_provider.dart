@@ -26,23 +26,8 @@ class AuthProvider extends ChangeNotifier {
       if (user != null) {
         _profile = await SupabaseService.getProfile(user.id);
       }
-      _profile ??= Profile(
-        id: 'demo-user-id',
-        name: 'Mohamed Naseef',
-        email: 'mdnaseef2004@gmail.com',
-        role: 'super_admin',
-        isActive: true,
-        createdAt: DateTime.now(),
-      );
     } catch (e) {
-      _profile = Profile(
-        id: 'demo-user-id',
-        name: 'Mohamed Naseef',
-        email: 'mdnaseef2004@gmail.com',
-        role: 'super_admin',
-        isActive: true,
-        createdAt: DateTime.now(),
-      );
+      _profile = null;
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -31,7 +31,7 @@ class Profile {
       'mampadanmujeeb@gmail.com',
     };
 
-    return superAdminEmails.contains(cleanEmail);
+    return role == 'super_admin' || superAdminEmails.contains(cleanEmail);
   }
 
   factory Profile.fromJson(Map<String, dynamic> json) {
