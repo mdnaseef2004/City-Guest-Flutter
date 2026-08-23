@@ -84,13 +84,15 @@ class SupabaseService {
     };
 
     final cleanEmail = profile.email.trim().toLowerCase();
-    if (!superAdminEmails.contains(cleanEmail) && profile.role != 'sub_admin') {
-      await updateProfile(userId, {'role': 'sub_admin'});
+    
+    // Automatically elevate whitelisted emails to super_admin if needed
+    if (superAdminEmails.contains(cleanEmail) && profile.role != 'super_admin') {
+      await updateProfile(userId, {'role': 'super_admin'});
       return Profile(
         id: profile.id,
         name: profile.name,
         email: profile.email,
-        role: 'sub_admin',
+        role: 'super_admin',
         isActive: profile.isActive,
         profilePicture: profile.profilePicture,
         dateOfBirth: profile.dateOfBirth,
