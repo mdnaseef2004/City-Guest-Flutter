@@ -206,12 +206,21 @@ class SupabaseService {
     }
 
     if (userId == null) {
-          'email': cleanEmail,
-          'role': role,
-          'is_active': true,
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', userId);
-      } catch (_) {}
+      throw Exception('Could not create account for "$cleanEmail". Please check email address and try again.');
+    }
+
+    // 2. Insert or update profile in public.profiles table
+    try {
+      await client.from('profiles').upsert({
+        'id': userId,
+        'name': name.trim(),
+        'email': cleanEmail,
+        'role': role,
+        'is_active': true,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      throw Exception('Failed to save user profile: $e');
     }
 
     try {
