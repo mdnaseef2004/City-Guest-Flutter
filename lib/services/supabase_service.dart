@@ -127,14 +127,13 @@ class SupabaseService {
       await client.from('events').update({'created_by': null}).eq('created_by', userId);
     } catch (_) {}
 
-    // 2. Delete from auth.users & public.profiles using RPC or direct deletion
+    // 2. Call RPC delete function if available
     try {
       await client.rpc('delete_user_by_admin', params: {'user_id': userId});
     } catch (_) {}
 
-    try {
-      await client.from('profiles').delete().eq('id', userId);
-    } catch (_) {}
+    // 3. Delete profile from public.profiles table (Triggers automatic deletion from auth.users in Supabase)
+    await client.from('profiles').delete().eq('id', userId);
   }
 
   // Create New Sub Admin / Super Admin User Account
