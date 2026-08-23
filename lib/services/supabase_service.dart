@@ -177,8 +177,7 @@ class SupabaseService {
       );
 
       userId = response.user?.id;
-    } on AuthException catch (e) {
-      final msg = e.message.toLowerCase();
+    } on AuthException catch (_) {
       // If user is already registered in Supabase Auth, try signing in with provided password
       try {
         final signInRes = await tempClient.auth.signInWithPassword(
@@ -187,24 +186,15 @@ class SupabaseService {
         );
         userId = signInRes.user?.id;
       } catch (_) {
-        if (msg.contains('already registered') ||
-            msg.contains('already exists') ||
-            msg.contains('user_already_exists') ||
-            e.statusCode == '422') {
-          throw Exception('The email "$cleanEmail" is already registered in Supabase Auth. Please try a different email address.');
-        }
-        throw Exception(e.message);
-      }
-    } catch (e) {
-      final errStr = e.toString();
-      if (errStr.contains('already registered') || errStr.contains('already exists')) {
         throw Exception('The email "$cleanEmail" is already registered in Supabase Auth. Please try a different email address.');
       }
-      throw Exception(errStr.replaceAll('Exception:', '').trim());
+    } catch (e) {
+      final errStr = e.toString().replaceAll('Exception:', '').trim();
+      throw Exception(errStr);
     }
 
-    // Fallback: Check if profile or auth created user ID
-    if (userId == null) {
+    // 2. Fallback: Check if database trigger handle_new_user created profile ID
+    if (userId == null || userId.isEmpty) {
       try {
         final profCheck = await client
             .from('profiles')
@@ -217,11 +207,12 @@ class SupabaseService {
       } catch (_) {}
     }
 
-    if (userId == null) {
-      throw Exception('Could not create user account for "$cleanEmail". Please check email address or try a different password.');
+    // Strict validation: NEVER proceed to upsert if userId is null
+    if (userId == null || userId.isEmpty) {
+      throw Exception('The email "$cleanEmail" is already registered in Supabase. Please use a different email address.');
     }
 
-    // 2. Insert or update profile in public.profiles table
+    // 3. Insert or update profile in public.profiles table safely
     try {
       await client.from('profiles').upsert({
         'id': userId,
