@@ -317,17 +317,13 @@ class GuestService {
     dynamic monthBuilder = _client.from('guest_visits').select('donation_amount').gte('created_at', '${monthStr}T00:00:00.000Z');
     if (!isSuperAdmin) monthBuilder = monthBuilder.eq('created_by', user.id);
 
-    dynamic allRowsBuilder = _client.from('guest_visits').select('id, guest_name, place, purpose, donation_amount, created_at, created_by, photo_url, handled_by, remarks');
-    if (!isSuperAdmin) allRowsBuilder = allRowsBuilder.eq('created_by', user.id);
-
-    // 2. Execute ALL queries concurrently in parallel with Future.wait
+    // 2. Execute base queries concurrently in parallel with Future.wait
     final results = await Future.wait<dynamic>(<Future<dynamic>>[
       countBuilder.count(CountOption.exact),
       todayBuilder.count(CountOption.exact),
       monthBuilder,
       _client.from('profiles').select('*'),
       _client.from('events').select('*'),
-      allRowsBuilder.order('created_at', ascending: false).limit(3000),
     ]);
 
     final PostgrestResponse countRes = results[0] as PostgrestResponse;
@@ -335,7 +331,23 @@ class GuestService {
     final List monthList = results[2] as List;
     final List usersList = (results[3] as List).cast<Map<String, dynamic>>();
     final List<Map<String, dynamic>> eventsList = (results[4] as List).cast<Map<String, dynamic>>();
-    final List<Map<String, dynamic>> allRows = (results[5] as List).cast<Map<String, dynamic>>();
+
+    // 3. Range-page through 100% of rows to bypass Supabase 1000 row REST limit
+    final List<Map<String, dynamic>> allRows = [];
+    int fromIndex = 0;
+    const int pageSize = 1000;
+    while (true) {
+      dynamic pageBuilder = _client
+          .from('guest_visits')
+          .select('id, guest_name, place, purpose, donation_amount, created_at, created_by, photo_url, handled_by, remarks')
+          .range(fromIndex, fromIndex + pageSize - 1);
+      if (!isSuperAdmin) pageBuilder = pageBuilder.eq('created_by', user.id);
+      final List<Map<String, dynamic>> pageData = (await pageBuilder as List).cast<Map<String, dynamic>>();
+      if (pageData.isEmpty) break;
+      allRows.addAll(pageData);
+      if (pageData.length < pageSize) break;
+      fromIndex += pageSize;
+    }
 
     final double monthlyDonations = monthList.fold(0.0, (sum, x) => sum + ((x['donation_amount'] ?? 0) as num).toDouble());
 
