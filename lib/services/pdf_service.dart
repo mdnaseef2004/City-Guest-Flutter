@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import '../utils/pdf_saver.dart';
 import '../config/constants.dart';
 import '../core/utils.dart';
 import '../models/event_model.dart';
@@ -120,9 +120,10 @@ class PdfService {
                             setModalState(() => isProcessing = true);
                             try {
                               final pdfBytes = pregeneratedPdfBytes ?? await generateGuestReceipt(visit);
-                              await Printing.layoutPdf(
-                                onLayout: (_) async => pdfBytes,
-                                name: 'Receipt-${visit.guestName.replaceAll(' ', '_')}',
+                              await PdfSaver.saveOrPrintPdf(
+                                bytes: pdfBytes,
+                                filename: 'Receipt-${visit.guestName.replaceAll(' ', '_')}.pdf',
+                                isPrint: true,
                               );
                               if (context.mounted) Navigator.pop(ctx);
                             } catch (e) {
@@ -619,7 +620,10 @@ class PdfService {
       rows: rows,
       roleLabel: roleLabel,
     );
-    await Printing.sharePdf(bytes: pdfBytes, filename: '${roleLabel.toLowerCase()}-performance-report.pdf');
+    await PdfSaver.saveOrPrintPdf(
+      bytes: pdfBytes,
+      filename: '${roleLabel.toLowerCase()}-performance-report.pdf',
+    );
   }
 
   static Future<void> exportEventReportPdf({
@@ -630,12 +634,19 @@ class PdfService {
       reportTitle: reportTitle,
       events: events,
     );
-    await Printing.sharePdf(bytes: pdfBytes, filename: 'events-analytics-report.pdf');
+    await PdfSaver.saveOrPrintPdf(
+      bytes: pdfBytes,
+      filename: 'events-analytics-report.pdf',
+    );
   }
 
   static Future<void> printReceipt(GuestVisit visit) async {
     final pdfBytes = await generateGuestReceipt(visit);
-    await Printing.layoutPdf(onLayout: (_) => pdfBytes);
+    await PdfSaver.saveOrPrintPdf(
+      bytes: pdfBytes,
+      filename: 'guest_receipt.pdf',
+      isPrint: true,
+    );
   }
 
   // Generate Guest Records Complete PDF (Matching Website Landscape Format with Dynamic Selected Columns)
@@ -877,9 +888,10 @@ class PdfService {
                             try {
                               final pdfBytes = pregeneratedPdfBytes ?? await generateIndividualEventPdf(event);
                               final cleanName = event.eventName.replaceAll(RegExp(r'[^\w\s\-]'), '').replaceAll(' ', '_');
-                              await Printing.layoutPdf(
-                                onLayout: (_) async => pdfBytes,
-                                name: 'Event_Sheet_$cleanName',
+                              await PdfSaver.saveOrPrintPdf(
+                                bytes: pdfBytes,
+                                filename: 'Event_Analytics_${cleanName}.pdf',
+                                isPrint: true,
                               );
                               if (context.mounted) Navigator.pop(ctx);
                             } catch (e) {

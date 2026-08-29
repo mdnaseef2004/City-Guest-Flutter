@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:printing/printing.dart';
+import 'pdf_saver.dart';
 
 class FileSaverHelper {
   static Future<void> downloadFile({
@@ -7,9 +7,10 @@ class FileSaverHelper {
     required String filename,
     required String mimeType,
   }) async {
-    await Printing.sharePdf(
+    await PdfSaver.saveOrPrintPdf(
       bytes: Uint8List.fromList(bytes),
       filename: filename,
+      isPrint: false,
     );
   }
 }
