@@ -8,6 +8,8 @@ class AppConstants {
   static const String supabaseUrl = 'https://btjagqphlsbhvwpqnlhn.supabase.co';
   static const String supabaseAnonKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0amFncXBobHNiaHZ3cHFubGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3OTgwOTMsImV4cCI6MjA5NjM3NDA5M30.Ar-8F9K2A_T42GK1nmLXqdcLSKxruk9sjt6b65tU4eM';
+  static const String supabaseServiceKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0amFncXBobHNiaHZ3cHFubGhuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDc5ODA5MywiZXhwIjoyMDk2Mzc0MDkzfQ.XR1HFS20bN79nfytWLj1JF_NB-8HO2IpvRwDl4eFqkg';
 
   // Indian States
   static const List<String> indianStates = [

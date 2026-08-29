@@ -113,6 +113,12 @@ class SupabaseService {
     return (data as List).map((json) => Profile.fromJson(json)).toList();
   }
 
+  // Admin Supabase Client with Service Role Key for Admin Auth tasks
+  static SupabaseClient get _adminClient => SupabaseClient(
+        AppConstants.supabaseUrl,
+        AppConstants.supabaseServiceKey,
+      );
+
   // Update Profile
   static Future<void> updateProfile(String id, Map<String, dynamic> updates) async {
     await client.from('profiles').update(updates).eq('id', id);
@@ -120,7 +126,7 @@ class SupabaseService {
 
   // Delete Admin User Account from Database (Preserving Guest & Event Records)
   static Future<void> deleteUser(String userId) async {
-    // 1. Unlink created_by in guest_visits and events to preserve all guest and event data
+    // 1. Unlink created_by & assignment references to preserve all guest, event, and task data
     try {
       await client.from('guest_visits').update({'created_by': null}).eq('created_by', userId);
     } catch (_) {}
@@ -129,12 +135,16 @@ class SupabaseService {
       await client.from('events').update({'created_by': null}).eq('created_by', userId);
     } catch (_) {}
 
-    // 2. Call RPC delete function if available
     try {
-      await client.rpc('delete_user_by_admin', params: {'user_id': userId});
+      await client.from('guest_assignments').update({'assigned_by': null}).eq('assigned_by', userId);
     } catch (_) {}
 
-    // 3. Delete profile from public.profiles table (Triggers automatic deletion from auth.users in Supabase)
+    // 2. Delete user from Supabase Auth using Service Role Admin API
+    try {
+      await _adminClient.auth.admin.deleteUser(userId);
+    } catch (_) {}
+
+    // 3. Delete profile from public.profiles table
     await client.from('profiles').delete().eq('id', userId);
   }
 
@@ -147,76 +157,25 @@ class SupabaseService {
   }) async {
     final cleanEmail = email.trim().toLowerCase();
 
-    // 1. Check if profile with email already exists in public.profiles
-    try {
-      final existingProfile = await client
-          .from('profiles')
-          .select('id')
-          .eq('email', cleanEmail)
-          .maybeSingle();
-
-      if (existingProfile != null) {
-        throw Exception('An admin account with email "$cleanEmail" already exists in database.');
-      }
-    } catch (e) {
-      if (e.toString().contains('already exists')) rethrow;
-    }
-
-    final tempClient = SupabaseClient(
-      AppConstants.supabaseUrl,
-      AppConstants.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(autoRefreshToken: false),
-    );
-
-    String? userId;
-
-    try {
-      final response = await tempClient.auth.signUp(
+    // 1. Create user in Supabase Auth via Service Role Admin API with email confirmed
+    final UserResponse userRes = await _adminClient.auth.admin.createUserWithEmail(
+      AdminUserAttributes(
         email: cleanEmail,
         password: password,
-        data: {'name': name.trim(), 'role': role},
-      );
+        emailConfirm: true,
+        userMetadata: {'name': name.trim(), 'role': role},
+      ),
+    );
 
-      userId = response.user?.id;
-    } on AuthException catch (_) {
-      // If user is already registered in Supabase Auth, try signing in with provided password
-      try {
-        final signInRes = await tempClient.auth.signInWithPassword(
-          email: cleanEmail,
-          password: password,
-        );
-        userId = signInRes.user?.id;
-      } catch (_) {
-        throw Exception('The email "$cleanEmail" is already registered in Supabase Auth. Please try a different email address.');
-      }
-    } catch (e) {
-      final errStr = e.toString().replaceAll('Exception:', '').trim();
-      throw Exception(errStr);
+    final newUserId = userRes.user?.id;
+    if (newUserId == null || newUserId.isEmpty) {
+      throw Exception('Failed to create user in Supabase Auth.');
     }
 
-    // 2. Fallback: Check if database trigger handle_new_user created profile ID
-    if (userId == null || userId.isEmpty) {
-      try {
-        final profCheck = await client
-            .from('profiles')
-            .select('id')
-            .eq('email', cleanEmail)
-            .maybeSingle();
-        if (profCheck != null && profCheck['id'] != null) {
-          userId = profCheck['id'].toString();
-        }
-      } catch (_) {}
-    }
-
-    // Strict validation: NEVER proceed to upsert if userId is null
-    if (userId == null || userId.isEmpty) {
-      throw Exception('The email "$cleanEmail" is already registered in Supabase. Please use a different email address.');
-    }
-
-    // 3. Insert or update profile in public.profiles table safely
+    // 2. Upsert profile in public.profiles table to eliminate profiles_pkey duplicate constraint errors
     try {
       await client.from('profiles').upsert({
-        'id': userId,
+        'id': newUserId,
         'name': name.trim(),
         'email': cleanEmail,
         'role': role,
@@ -224,12 +183,8 @@ class SupabaseService {
         'updated_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      throw Exception('Failed to save user profile: $e');
+      throw Exception('User created in Auth but profile save failed: $e');
     }
-
-    try {
-      await tempClient.auth.signOut();
-    } catch (_) {}
   }
 
   // Upload Profile Picture to Supabase Storage

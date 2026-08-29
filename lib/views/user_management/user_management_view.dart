@@ -59,7 +59,7 @@ class _UserManagementViewState extends State<UserManagementView> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Add New Sub Admin Account'),
+              title: const Text('Add New Admin Account'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -272,7 +272,7 @@ class _UserManagementViewState extends State<UserManagementView> {
               child: FloatingActionButton.extended(
                 onPressed: _openCreateUserDialog,
                 icon: const Icon(Icons.person_add),
-                label: const Text('Add Sub Admin', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text('Add Admin Account', style: TextStyle(fontWeight: FontWeight.bold)),
                 backgroundColor: AppColors.primary,
               ),
             )

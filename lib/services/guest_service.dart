@@ -176,7 +176,7 @@ class GuestService {
     final now = DateTime.now();
     final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     
-    dynamic query = _client.from('guest_visits').select('*, profiles!created_by(name), visited_places(*)');
+    dynamic query = _client.from('guest_visits').select('*, profiles!guest_visits_created_by_fkey(name), visited_places(*)');
 
     if (!isSuperAdmin) {
       query = query.eq('created_by', user.id);
@@ -202,7 +202,7 @@ class GuestService {
     final user = SupabaseService.currentUser;
     if (user == null) return [];
 
-    dynamic query = _client.from('guest_visits').select('*, profiles!created_by(name), visited_places(*)');
+    dynamic query = _client.from('guest_visits').select('*, profiles!guest_visits_created_by_fkey(name), visited_places(*)');
 
     if (!isSuperAdmin) {
       query = query.eq('created_by', user.id);
@@ -236,7 +236,7 @@ class GuestService {
     final user = SupabaseService.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
-    dynamic query = _client.from('guest_visits').select('*, profiles!created_by(name), visited_places(*)');
+    dynamic query = _client.from('guest_visits').select('*, profiles!guest_visits_created_by_fkey(name), visited_places(*)');
 
     if (!isSuperAdmin) {
       query = query.eq('created_by', user.id);
