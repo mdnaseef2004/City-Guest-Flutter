@@ -31,7 +31,7 @@ android {
     defaultConfig {
         applicationId = "com.markazknowledgecity.cityguest"
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36
         multiDexEnabled = true
         versionCode = flutter.versionCode
         versionName = flutter.versionName
