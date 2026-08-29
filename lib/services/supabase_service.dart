@@ -158,7 +158,7 @@ class SupabaseService {
     final cleanEmail = email.trim().toLowerCase();
 
     // 1. Create user in Supabase Auth via Service Role Admin API with email confirmed
-    final UserResponse userRes = await _adminClient.auth.admin.createUserWithEmail(
+    final UserResponse userRes = await _adminClient.auth.admin.createUser(
       AdminUserAttributes(
         email: cleanEmail,
         password: password,
