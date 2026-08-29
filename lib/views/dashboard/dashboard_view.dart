@@ -262,10 +262,7 @@ class _DashboardViewState extends State<DashboardView> {
 
   bool _isSuperAdminUser(Profile? profile) {
     if (profile == null) return false;
-    final email = profile.email.trim().toLowerCase();
-    return email == 'mdnaseef2004@gmail.com' ||
-        email == 'shaheenmohammed554@gmail.com' ||
-        email == 'mampadanmujeeb@gmail.com';
+    return profile.isSuperAdmin;
   }
 
   @override
