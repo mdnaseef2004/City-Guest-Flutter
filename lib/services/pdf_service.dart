@@ -16,6 +16,13 @@ import '../utils/file_saver_helper.dart';
 class PdfService {
   static Uint8List? _cachedLogoBytes;
 
+  static String cleanPdfText(dynamic val) {
+    if (val == null) return '';
+    final str = val.toString();
+    final cleaned = str.replaceAll(RegExp(r'[^\x20-\x7E\n\r\t]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    return cleaned.isNotEmpty ? cleaned : '-';
+  }
+
   static String formatPdfCurrency(double amount) {
     final formatter = NumberFormat('#,##,##0', 'en_IN');
     return 'Rs. ${formatter.format(amount)}';
@@ -796,7 +803,7 @@ class PdfService {
                       row.add('-');
                   }
                 }
-                return row;
+                return row.map((cell) => cleanPdfText(cell)).toList();
               }).toList(),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 8),
               headerDecoration: pw.BoxDecoration(color: primaryColor),
