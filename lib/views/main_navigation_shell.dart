@@ -155,6 +155,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       body: ResponsiveLayout(
         // Mobile Layout: Screen View + Forest Emerald Green Navigation Drawer & Liquid Floating Bottom Navigation Bar
         mobile: Scaffold(
+          resizeToAvoidBottomInset: true,
           appBar: AppBar(
             backgroundColor: const Color(0xFF064E3B),
             foregroundColor: Colors.white,
@@ -642,10 +643,19 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   Widget _buildLiquidBottomNavBar(List<NavItem> navItems) {
-    final mobileIndices = [0, 1, 2, 5];
-    final selectedBottomIndex = mobileIndices.indexOf(_selectedIndex);
-    final activeIndex = selectedBottomIndex != -1 ? selectedBottomIndex : 0;
+    // Hide floating bottom navigation bar when soft keyboard is open on mobile to prevent blocking text fields
+    if (MediaQuery.of(context).viewInsets.bottom > 0) {
+      return const SizedBox.shrink();
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Map of top primary 4 tabs for mobile bottom bar
+    final List<int> mobileIndices = [0, 1, 2, 5]; // Dashboard, Add Guest, Records, Reports
+
+    int activeIndex = mobileIndices.indexOf(_selectedIndex);
+    if (activeIndex == -1) {
+      activeIndex = 0; // default indicator position for overflow screens
+    }
 
     return Container(
       margin: const EdgeInsets.only(left: 20, right: 20, bottom: 18, top: 4),
