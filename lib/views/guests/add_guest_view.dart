@@ -42,14 +42,24 @@ class _AddGuestViewState extends State<AddGuestView> {
   File? _guestPhoto;
   bool _isSaving = false;
 
+  List<Profile> _allAdminUsers = [];
   final List<VisitedPlaceInput> _visitedPlaces = [];
 
   @override
   void initState() {
     super.initState();
-    final profile = Provider.of<AuthProvider>(context, listen: false).profile;
-    if (profile != null) {
-      _handledByController.text = profile.name;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.profile != null) {
+      _handledByController.text = authProvider.profile!.name;
+    }
+    if (authProvider.isSuperAdmin) {
+      GuestService.getUsers().then((users) {
+        if (mounted) {
+          setState(() {
+            _allAdminUsers = users;
+          });
+        }
+      });
     }
   }
 
@@ -236,6 +246,7 @@ class _AddGuestViewState extends State<AddGuestView> {
 
   @override
   Widget build(BuildContext context) {
+    final isSuperAdmin = Provider.of<AuthProvider>(context).isSuperAdmin;
     final districts = _selectedState != null
         ? AppConstants.districtsByState[_selectedState] ?? []
         : <String>[];
@@ -481,7 +492,44 @@ class _AddGuestViewState extends State<AddGuestView> {
                   prefixIcon: Icon(Icons.receipt_long_outlined),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Handled By Field — Dropdown for Super Admin to select admin name, text field for Sub Admin
+              if (isSuperAdmin && _allAdminUsers.isNotEmpty) ...[
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: _allAdminUsers.any((u) => u.name == _handledByController.text) ? _handledByController.text : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Handled By (Select Admin Name) *',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  items: _allAdminUsers.map((u) {
+                    return DropdownMenuItem<String>(
+                      value: u.name,
+                      child: Text('${u.name} (${u.role == "super_admin" ? "Super Admin" : "Sub Admin"})', overflow: TextOverflow.ellipsis),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _handledByController.text = val;
+                      });
+                    }
+                  },
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 16),
+              ] else ...[
+                TextFormField(
+                  controller: _handledByController,
+                  decoration: const InputDecoration(
+                    labelText: 'Handled By *',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Multiple Visited Places Section
               Row(
