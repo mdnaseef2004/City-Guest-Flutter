@@ -162,7 +162,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
     String? state = guest.state;
     String? country = guest.country;
     bool isIntl = guest.isInternational;
-    final List<VisitedPlaceInput> visitedPlacesList = List<VisitedPlaceInput>.from(guest.visitedPlaces);
+    final List<VisitedPlace> visitedPlacesList = List<VisitedPlace>.from(guest.visitedPlaces);
 
     showDialog(
       context: context,
@@ -303,7 +303,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                         children: [
                           Text('Visited Places List', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
                           OutlinedButton.icon(
-                            onPressed: () => setDialogState(() => visitedPlacesList.add(VisitedPlaceInput())),
+                            onPressed: () => setDialogState(() => visitedPlacesList.add(VisitedPlace(visitedPlace: ''))),
                             icon: const Icon(Icons.add, size: 16),
                             label: const Text('Add Place', style: TextStyle(fontSize: 12)),
                           ),
@@ -329,7 +329,14 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                     child: TextField(
                                       decoration: const InputDecoration(labelText: 'Place Name', isDense: true),
                                       controller: TextEditingController(text: vp.visitedPlace)..selection = TextSelection.collapsed(offset: vp.visitedPlace.length),
-                                      onChanged: (v) => vp.visitedPlace = v,
+                                      onChanged: (v) => visitedPlacesList[idx] = VisitedPlace(
+                                        id: vp.id,
+                                        guestVisitId: vp.guestVisitId,
+                                        visitedPlace: v,
+                                        visitDate: vp.visitDate,
+                                        timeIn: vp.timeIn,
+                                        timeOut: vp.timeOut,
+                                      ),
                                     ),
                                   ),
                                   IconButton(
