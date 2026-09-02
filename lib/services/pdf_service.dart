@@ -658,6 +658,7 @@ class PdfService {
     final pdf = pw.Document();
     final todayStr = DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now());
     final primaryColor = PdfColor.fromHex('#059669');
+    final totalDonations = guests.fold<double>(0.0, (s, g) => s + g.donationAmount);
 
     pw.MemoryImage? logoImage;
     try {
@@ -727,7 +728,7 @@ class PdfService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Generated On: $todayStr | Total Records: ${guests.length}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                pw.Text('Generated On: $todayStr | Total Records: ${guests.length} | Total Donations: Rs. ${NumberFormat('#,##,##0', 'en_IN').format(totalDonations)}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                 pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
               ],
             ),
@@ -795,6 +796,27 @@ class PdfService {
               cellAlignment: pw.Alignment.centerLeft,
               cellStyle: const pw.TextStyle(fontSize: 7.5),
               border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: pw.BoxDecoration(
+                color: primaryColor,
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'TOTAL GUESTS: ${guests.length}',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                  ),
+                  pw.Text(
+                    'TOTAL DONATIONS: Rs. ${NumberFormat('#,##,##0', 'en_IN').format(totalDonations)}',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                  ),
+                ],
+              ),
             ),
           ];
         },
