@@ -907,6 +907,47 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                               onChanged: (val) => guestProvider.setFilterHandledBy(val, isSuperAdmin),
                             ),
 
+                            // Donation Filter Dropdown
+                            Container(
+                              height: 40,
+                              width: calcWidth,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                border: Border.all(
+                                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                  width: 1.2,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: guestProvider.selectedDonationFilter,
+                                  isDense: true,
+                                  isExpanded: true,
+                                  dropdownColor: Theme.of(context).colorScheme.surface,
+                                  iconEnabledColor: Theme.of(context).colorScheme.onSurface,
+                                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500),
+                                  hint: Text('All Donations', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+                                  items: [
+                                    DropdownMenuItem<String>(
+                                      value: null,
+                                      child: Text('All Donations', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                                    ),
+                                    DropdownMenuItem<String>(
+                                      value: 'donations_only',
+                                      child: Text('With Donation (₹ > 0)', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                                    ),
+                                    DropdownMenuItem<String>(
+                                      value: 'no_donation',
+                                      child: Text('No Donation (₹ = 0)', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ],
+                                  onChanged: (val) => guestProvider.setFilterDonation(val, isSuperAdmin),
+                                ),
+                              ),
+                            ),
+
                             // Admins / Created By Dropdown
                             if (isSuperAdmin)
                               Container(

@@ -229,6 +229,7 @@ class GuestService {
     String? handledBy,
     String? startDate,
     String? endDate,
+    String? donationFilter,
     int page = 1,
     int perPage = 20,
     bool isSuperAdmin = false,
@@ -253,6 +254,8 @@ class GuestService {
     if (purpose != null && purpose.isNotEmpty) query = query.eq('purpose', purpose);
     if (startDate != null && startDate.isNotEmpty) query = query.gte('created_at', '${startDate}T00:00:00.000Z');
     if (endDate != null && endDate.isNotEmpty) query = query.lte('created_at', '${endDate}T23:59:59.999Z');
+    if (donationFilter == 'donations_only') query = query.gt('donation_amount', 0);
+    if (donationFilter == 'no_donation') query = query.or('donation_amount.eq.0,donation_amount.is.null');
 
     final fromIndex = (page - 1) * perPage;
     final toIndex = page * perPage - 1;
