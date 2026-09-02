@@ -23,17 +23,20 @@ class _AddGuestViewState extends State<AddGuestView> {
   final _guestNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _occupationController = TextEditingController();
+  final _createdAtDateController = TextEditingController();
   final _placeController = TextEditingController();
   final _districtController = TextEditingController();
   final _purposeController = TextEditingController();
   final _donationController = TextEditingController();
   final _receiptNoController = TextEditingController();
+  final _customDonationToController = TextEditingController();
   final _pickedFromController = TextEditingController();
   final _handledByController = TextEditingController();
   final _remarksController = TextEditingController();
 
   String? _selectedState;
   String? _selectedCountry;
+  String? _selectedDonationTo;
   bool _isInternational = false;
   File? _guestPhoto;
   bool _isSaving = false;
@@ -54,11 +57,13 @@ class _AddGuestViewState extends State<AddGuestView> {
     _guestNameController.dispose();
     _phoneController.dispose();
     _occupationController.dispose();
+    _createdAtDateController.dispose();
     _placeController.dispose();
     _districtController.dispose();
     _purposeController.dispose();
     _donationController.dispose();
     _receiptNoController.dispose();
+    _customDonationToController.dispose();
     _pickedFromController.dispose();
     _handledByController.dispose();
     _remarksController.dispose();
@@ -139,6 +144,9 @@ class _AddGuestViewState extends State<AddGuestView> {
 
       final savedName = _guestNameController.text.trim();
       final savedPhone = _phoneController.text.trim();
+      final finalDonationTo = _selectedDonationTo == 'Others'
+          ? (_customDonationToController.text.trim().isNotEmpty ? _customDonationToController.text.trim() : 'Others')
+          : _selectedDonationTo;
 
       await GuestService.addGuest(
         guestName: savedName,
@@ -153,6 +161,8 @@ class _AddGuestViewState extends State<AddGuestView> {
         purpose: _purposeController.text.trim(),
         donationAmount: donation,
         receiptNo: _receiptNoController.text.trim(),
+        donationTo: finalDonationTo,
+        createdAtDate: _createdAtDateController.text.trim().isNotEmpty ? '${_createdAtDateController.text.trim()}T00:00:00.000Z' : null,
         pickedFrom: _pickedFromController.text.trim(),
         handledBy: _handledByController.text.trim(),
         remarks: _remarksController.text.trim(),
@@ -376,6 +386,28 @@ class _AddGuestViewState extends State<AddGuestView> {
               ],
               const SizedBox(height: 16),
 
+              // Visit Date / Entry Date
+              TextFormField(
+                controller: _createdAtDateController,
+                readOnly: true,
+                decoration: const InputDecoration(
+                  labelText: 'Visit Date (Optional - Defaults to Today)',
+                  prefixIcon: Icon(Icons.calendar_today_outlined),
+                ),
+                onTap: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (d != null) {
+                    _createdAtDateController.text = DateFormat('yyyy-MM-dd').format(d);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
               TextFormField(
                 controller: _purposeController,
                 decoration: const InputDecoration(
@@ -395,6 +427,39 @@ class _AddGuestViewState extends State<AddGuestView> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Donation To / Destination Dropdown
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                value: _selectedDonationTo,
+                decoration: const InputDecoration(
+                  labelText: 'Donation To / Destination',
+                  prefixIcon: Icon(Icons.account_balance_outlined),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'Jamiul Futuh', child: Text('Jamiul Futuh')),
+                  DropdownMenuItem(value: 'Shorbahana', child: Text('Shorbahana')),
+                  DropdownMenuItem(value: 'Others', child: Text('Others')),
+                ],
+                onChanged: (val) {
+                  setState(() {
+                    _selectedDonationTo = val;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+
+              if (_selectedDonationTo == 'Others') ...[
+                TextFormField(
+                  controller: _customDonationToController,
+                  decoration: const InputDecoration(
+                    labelText: 'Specify Donation Destination *',
+                    prefixIcon: Icon(Icons.edit_note_outlined),
+                  ),
+                  validator: (v) => _selectedDonationTo == 'Others' && (v == null || v.trim().isEmpty) ? 'Required' : null,
+                ),
+                const SizedBox(height: 16),
+              ],
 
               TextFormField(
                 controller: _receiptNoController,

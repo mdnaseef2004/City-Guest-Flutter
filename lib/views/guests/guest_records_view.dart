@@ -295,6 +295,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
       'purpose': 'Purpose of Visit',
       'donation': 'Donation (₹)',
       'receipt': 'Receipt No',
+      'donation_to': 'Donation Destination',
       'handled_by': 'Handled By',
       'created_by': 'Admin Name (Entered By)',
       'remarks': 'Remarks',
@@ -482,6 +483,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
           'purpose': 'Purpose',
           'donation': 'Donation (₹)',
           'receipt': 'Receipt No',
+          'donation_to': 'Donation Destination',
           'handled_by': 'Handled By',
           'created_by': 'Admin Name (Entered By)',
           'remarks': 'Remarks',
@@ -503,6 +505,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
               case 'purpose': row.add(r.purpose); break;
               case 'donation': row.add(r.donationAmount); break;
               case 'receipt': row.add(r.receiptNo ?? ''); break;
+              case 'donation_to': row.add(r.donationTo ?? ''); break;
               case 'handled_by': row.add(r.handledBy ?? ''); break;
               case 'created_by': row.add(r.createdByName ?? 'Unknown'); break;
               case 'remarks': row.add(r.remarks ?? ''); break;
@@ -949,6 +952,15 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                                   onChanged: (val) => guestProvider.setFilterDonation(val, isSuperAdmin),
                                 ),
                               ),
+                            ),
+
+                            // Donation Destination (Donation To) Filter Dropdown
+                            _buildFilterDropdown(
+                              hint: 'All Destinations (Donation To)',
+                              value: guestProvider.selectedDonationTo,
+                              items: const ['Jamiul Futuh', 'Shorbahana', 'Others'],
+                              width: calcWidth,
+                              onChanged: (val) => guestProvider.setFilterDonationTo(val, isSuperAdmin),
                             ),
 
                             // Admins / Created By Multi-Select Dropdown

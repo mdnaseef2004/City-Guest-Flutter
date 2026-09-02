@@ -51,6 +51,7 @@ class GuestService {
     required String purpose,
     double donationAmount = 0.0,
     String? receiptNo,
+    String? donationTo,
     String? pickedFrom,
     String? pickedDate,
     String? pickedTime,
@@ -59,13 +60,14 @@ class GuestService {
     String? returnTime,
     String? handledBy,
     String? remarks,
+    String? createdAtDate,
     List<VisitedPlace> visitedPlaces = const [],
   }) async {
     final user = SupabaseService.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
     // Insert guest_visits
-    final visitData = await _client.from('guest_visits').insert({
+    final Map<String, dynamic> insertPayload = {
       'guest_name': guestName.trim(),
       'phone_number': phoneNumber.trim(),
       'occupation': occupation?.trim(),
@@ -78,6 +80,7 @@ class GuestService {
       'purpose': purpose.trim(),
       'donation_amount': donationAmount,
       'receipt_no': receiptNo?.trim(),
+      'donation_to': donationTo?.trim(),
       'picked_from': pickedFrom?.trim(),
       'picked_date': pickedDate,
       'picked_time': pickedTime,
@@ -87,7 +90,13 @@ class GuestService {
       'handled_by': handledBy?.trim(),
       'remarks': remarks?.trim(),
       'created_by': user.id,
-    }).select().single();
+    };
+
+    if (createdAtDate != null && createdAtDate.trim().isNotEmpty) {
+      insertPayload['created_at'] = createdAtDate.trim();
+    }
+
+    final visitData = await _client.from('guest_visits').insert(insertPayload).select().single();
 
     final String visitId = visitData['id'].toString();
 
@@ -230,6 +239,7 @@ class GuestService {
     String? startDate,
     String? endDate,
     String? donationFilter,
+    String? donationTo,
     int page = 1,
     int perPage = 20,
     bool isSuperAdmin = false,
@@ -264,6 +274,7 @@ class GuestService {
     if (state != null && state.isNotEmpty) query = query.eq('state', state);
     if (country != null && country.isNotEmpty) query = query.eq('country', country);
     if (purpose != null && purpose.isNotEmpty) query = query.eq('purpose', purpose);
+    if (donationTo != null && donationTo.isNotEmpty) query = query.eq('donation_to', donationTo);
     if (startDate != null && startDate.isNotEmpty) query = query.gte('created_at', '${startDate}T00:00:00.000Z');
     if (endDate != null && endDate.isNotEmpty) query = query.lte('created_at', '${endDate}T23:59:59.999Z');
     if (donationFilter == 'donations_only') query = query.gt('donation_amount', 0);

@@ -677,6 +677,7 @@ class PdfService {
       'purpose': 'Purpose',
       'donation': 'Donation (Rs.)',
       'receipt': 'Receipt No',
+      'donation_to': 'Donation Destination',
       'handled_by': 'Handled By',
       'created_by': 'Admin Name',
       'remarks': 'Remarks',
@@ -775,6 +776,9 @@ class PdfService {
                       break;
                     case 'receipt':
                       row.add((g.receiptNo != null && g.receiptNo!.trim().isNotEmpty) ? g.receiptNo!.trim() : '-');
+                      break;
+                    case 'donation_to':
+                      row.add((g.donationTo != null && g.donationTo!.trim().isNotEmpty) ? g.donationTo!.trim() : '-');
                       break;
                     case 'handled_by':
                       row.add((g.handledBy != null && g.handledBy!.trim().isNotEmpty) ? g.handledBy!.trim() : '-');

@@ -18,6 +18,7 @@ class GuestProvider extends ChangeNotifier {
   List<String> _selectedHandledBy = [];
   List<String> _selectedCreatedBy = [];
   String? _selectedDonationFilter;
+  String? _selectedDonationTo;
   String? _startDate;
   String? _endDate;
 
@@ -35,6 +36,7 @@ class GuestProvider extends ChangeNotifier {
   List<String> get selectedHandledBy => _selectedHandledBy;
   List<String> get selectedCreatedBy => _selectedCreatedBy;
   String? get selectedDonationFilter => _selectedDonationFilter;
+  String? get selectedDonationTo => _selectedDonationTo;
   String? get startDate => _startDate;
   String? get endDate => _endDate;
 
@@ -92,6 +94,12 @@ class GuestProvider extends ChangeNotifier {
     fetchGuests(isSuperAdmin);
   }
 
+  void setFilterDonationTo(String? donTo, bool isSuperAdmin) {
+    _selectedDonationTo = donTo;
+    _currentPage = 1;
+    fetchGuests(isSuperAdmin);
+  }
+
   void setDateRange(String? start, String? end, bool isSuperAdmin) {
     _startDate = start;
     _endDate = end;
@@ -109,6 +117,7 @@ class GuestProvider extends ChangeNotifier {
     _selectedHandledBy = [];
     _selectedCreatedBy = [];
     _selectedDonationFilter = null;
+    _selectedDonationTo = null;
     _startDate = null;
     _endDate = null;
     _currentPage = 1;
@@ -131,6 +140,7 @@ class GuestProvider extends ChangeNotifier {
         handledBy: _selectedHandledBy,
         createdBy: _selectedCreatedBy,
         donationFilter: _selectedDonationFilter,
+        donationTo: _selectedDonationTo,
         startDate: _startDate,
         endDate: _endDate,
         page: _currentPage,

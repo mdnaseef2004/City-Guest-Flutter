@@ -14,6 +14,7 @@ class GuestVisit {
   final String purpose;
   final double donationAmount;
   final String? receiptNo;
+  final String? donationTo;
   final String? pickedFrom;
   final String? pickedDate;
   final String? pickedTime;
@@ -42,6 +43,7 @@ class GuestVisit {
     required this.purpose,
     this.donationAmount = 0.0,
     this.receiptNo,
+    this.donationTo,
     this.pickedFrom,
     this.pickedDate,
     this.pickedTime,
@@ -84,6 +86,7 @@ class GuestVisit {
       purpose: json['purpose'] ?? '',
       donationAmount: (json['donation_amount'] ?? 0).toDouble(),
       receiptNo: json['receipt_no'],
+      donationTo: json['donation_to'],
       pickedFrom: json['picked_from'],
       pickedDate: json['picked_date']?.toString(),
       pickedTime: json['picked_time']?.toString(),
@@ -116,6 +119,7 @@ class GuestVisit {
       'purpose': purpose,
       'donation_amount': donationAmount,
       'receipt_no': receiptNo,
+      'donation_to': donationTo,
       'picked_from': pickedFrom,
       'picked_date': pickedDate,
       'picked_time': pickedTime,
