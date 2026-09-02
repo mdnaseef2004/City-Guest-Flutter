@@ -277,6 +277,15 @@ class _AddGuestViewState extends State<AddGuestView> {
               const SizedBox(height: 16),
 
               TextFormField(
+                controller: _occupationController,
+                decoration: const InputDecoration(
+                  labelText: 'Occupation / Profession',
+                  prefixIcon: Icon(Icons.work_outline),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
                 controller: _placeController,
                 decoration: const InputDecoration(
                   labelText: 'Full Address / Place *',
