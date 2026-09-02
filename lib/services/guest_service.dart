@@ -225,8 +225,8 @@ class GuestService {
     String? state,
     String? country,
     String? purpose,
-    String? createdBy,
-    String? handledBy,
+    dynamic createdBy,
+    dynamic handledBy,
     String? startDate,
     String? endDate,
     String? donationFilter,
@@ -242,8 +242,20 @@ class GuestService {
     if (!isSuperAdmin) {
       query = query.eq('created_by', user.id);
     }
-    if (createdBy != null && createdBy.isNotEmpty) query = query.eq('created_by', createdBy);
-    if (handledBy != null && handledBy.isNotEmpty) query = query.eq('handled_by', handledBy);
+    if (createdBy != null) {
+      if (createdBy is List && createdBy.isNotEmpty) {
+        query = query.filter('created_by', 'in', createdBy);
+      } else if (createdBy is String && createdBy.isNotEmpty) {
+        query = query.eq('created_by', createdBy);
+      }
+    }
+    if (handledBy != null) {
+      if (handledBy is List && handledBy.isNotEmpty) {
+        query = query.filter('handled_by', 'in', handledBy);
+      } else if (handledBy is String && handledBy.isNotEmpty) {
+        query = query.eq('handled_by', handledBy);
+      }
+    }
     if (search != null && search.trim().isNotEmpty) {
       query = query.ilike('guest_name', '%${search.trim()}%');
     }

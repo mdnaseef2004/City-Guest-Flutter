@@ -901,11 +901,11 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                               onChanged: (val) => guestProvider.setFilterPurpose(val, isSuperAdmin),
                             ),
 
-                            // Handled By Dropdown
-                            _buildFilterDropdown(
-                              hint: 'All Handled By',
-                              value: guestProvider.selectedHandledBy,
-                              items: _adminUsers.map((u) => u.name).toList(),
+                            // Handled By Multi-Select Dropdown
+                            _buildMultiSelectFilterButton(
+                              title: 'All Handled By',
+                              items: _adminUsers.map((u) => {'id': u.name, 'label': u.name}).toList(),
+                              selectedValues: guestProvider.selectedHandledBy,
                               width: calcWidth,
                               onChanged: (val) => guestProvider.setFilterHandledBy(val, isSuperAdmin),
                             ),
@@ -951,42 +951,14 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                               ),
                             ),
 
-                            // Admins / Created By Dropdown
+                            // Admins / Created By Multi-Select Dropdown
                             if (isSuperAdmin)
-                              Container(
-                                height: 40,
+                              _buildMultiSelectFilterButton(
+                                title: 'All Admins',
+                                items: _adminUsers.map((u) => {'id': u.id, 'label': '${u.name} (${u.role == "super_admin" ? "Super" : "Sub"})'}).toList(),
+                                selectedValues: guestProvider.selectedCreatedBy,
                                 width: calcWidth,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  border: Border.all(
-                                    color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-                                    width: 1.2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: guestProvider.selectedCreatedBy,
-                                    isDense: true,
-                                    isExpanded: true,
-                                    dropdownColor: Theme.of(context).colorScheme.surface,
-                                    iconEnabledColor: Theme.of(context).colorScheme.onSurface,
-                                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500),
-                                    hint: Text('All Admins', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis),
-                                    items: [
-                                      DropdownMenuItem<String>(
-                                        value: null,
-                                        child: Text('All Admins', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
-                                      ),
-                                      ..._adminUsers.map((u) => DropdownMenuItem<String>(
-                                            value: u.id,
-                                            child: Text('${u.name} (${u.role == "super_admin" ? "Super" : "Sub"})', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
-                                          )),
-                                    ],
-                                    onChanged: (val) => guestProvider.setFilterCreatedBy(val, isSuperAdmin),
-                                  ),
-                                ),
+                                onChanged: (val) => guestProvider.setFilterCreatedBy(val, isSuperAdmin),
                               ),
                           ],
                         );
@@ -1339,6 +1311,132 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                 color: Colors.white,
               ),
             ),
+  Widget _buildMultiSelectFilterButton({
+    required String title,
+    required List<Map<String, String>> items,
+    required List<String> selectedValues,
+    required Function(List<String>) onChanged,
+    double? width,
+  }) {
+    final isSelected = selectedValues.isNotEmpty;
+    String labelText = title;
+    if (isSelected) {
+      if (selectedValues.length == 1) {
+        final match = items.firstWhere(
+          (i) => i['id'] == selectedValues.first,
+          orElse: () => {'label': '${selectedValues.length} Selected'},
+        );
+        labelText = match['label'] ?? title;
+      } else {
+        labelText = '${selectedValues.length} Selected';
+      }
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isSelected ? AppColors.primary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface;
+    final textColor = isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface;
+    final borderColor = isSelected ? AppColors.primary : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1));
+
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (ctx) {
+            final List<String> tempSelected = List<String>.from(selectedValues);
+
+            return StatefulBuilder(
+              builder: (context, setModalState) {
+                final isAllSelected = tempSelected.isEmpty;
+
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: Text('Select $title', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  content: SizedBox(
+                    width: 320,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CheckboxListTile(
+                            value: isAllSelected,
+                            activeColor: AppColors.primary,
+                            title: Text('All ($title)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            onChanged: (val) {
+                              setModalState(() {
+                                tempSelected.clear();
+                              });
+                            },
+                          ),
+                          const Divider(),
+                          ...items.map((item) {
+                            final checked = tempSelected.contains(item['id']);
+                            return CheckboxListTile(
+                              value: checked,
+                              activeColor: AppColors.primary,
+                              title: Text(item['label'] ?? '', style: const TextStyle(fontSize: 13)),
+                              onChanged: (val) {
+                                setModalState(() {
+                                  if (val == true) {
+                                    tempSelected.add(item['id']!);
+                                  } else {
+                                    tempSelected.remove(item['id']);
+                                  }
+                                });
+                              },
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        onChanged(tempSelected);
+                        Navigator.pop(ctx);
+                      },
+                      child: const Text('Apply Filter'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 40,
+        width: width ?? 200,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                labelText,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: textColor, size: 18),
           ],
         ),
       ),

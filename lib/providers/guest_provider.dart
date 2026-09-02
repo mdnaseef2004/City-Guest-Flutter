@@ -15,8 +15,8 @@ class GuestProvider extends ChangeNotifier {
   String? _selectedState;
   String? _selectedCountry;
   String? _selectedPurpose;
-  String? _selectedHandledBy;
-  String? _selectedCreatedBy;
+  List<String> _selectedHandledBy = [];
+  List<String> _selectedCreatedBy = [];
   String? _selectedDonationFilter;
   String? _startDate;
   String? _endDate;
@@ -32,8 +32,8 @@ class GuestProvider extends ChangeNotifier {
   String? get selectedState => _selectedState;
   String? get selectedCountry => _selectedCountry;
   String? get selectedPurpose => _selectedPurpose;
-  String? get selectedHandledBy => _selectedHandledBy;
-  String? get selectedCreatedBy => _selectedCreatedBy;
+  List<String> get selectedHandledBy => _selectedHandledBy;
+  List<String> get selectedCreatedBy => _selectedCreatedBy;
   String? get selectedDonationFilter => _selectedDonationFilter;
   String? get startDate => _startDate;
   String? get endDate => _endDate;
@@ -74,13 +74,13 @@ class GuestProvider extends ChangeNotifier {
     fetchGuests(isSuperAdmin);
   }
 
-  void setFilterHandledBy(String? h, bool isSuperAdmin) {
+  void setFilterHandledBy(List<String> h, bool isSuperAdmin) {
     _selectedHandledBy = h;
     _currentPage = 1;
     fetchGuests(isSuperAdmin);
   }
 
-  void setFilterCreatedBy(String? cb, bool isSuperAdmin) {
+  void setFilterCreatedBy(List<String> cb, bool isSuperAdmin) {
     _selectedCreatedBy = cb;
     _currentPage = 1;
     fetchGuests(isSuperAdmin);
@@ -106,8 +106,8 @@ class GuestProvider extends ChangeNotifier {
     _selectedState = null;
     _selectedCountry = null;
     _selectedPurpose = null;
-    _selectedHandledBy = null;
-    _selectedCreatedBy = null;
+    _selectedHandledBy = [];
+    _selectedCreatedBy = [];
     _selectedDonationFilter = null;
     _startDate = null;
     _endDate = null;
