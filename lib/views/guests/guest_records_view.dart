@@ -1311,6 +1311,12 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                 color: Colors.white,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMultiSelectFilterButton({
     required String title,
     required List<Map<String, String>> items,
