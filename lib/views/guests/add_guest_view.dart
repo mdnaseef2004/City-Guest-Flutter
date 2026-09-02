@@ -100,9 +100,19 @@ class _AddGuestViewState extends State<AddGuestView> {
     }
 
     final donation = double.tryParse(_donationController.text.trim()) ?? 0.0;
-    if (donation > 0 && _receiptNoController.text.trim().isEmpty) {
-      AppUtils.showSnackBar(context, 'Receipt No is required when Donation Amount is entered', isError: true);
-      return;
+    if (donation > 0) {
+      if (_selectedDonationTo == null || _selectedDonationTo!.isEmpty) {
+        AppUtils.showSnackBar(context, 'Donation Destination is required when Donation Amount is entered', isError: true);
+        return;
+      }
+      if (_selectedDonationTo == 'Others' && _customDonationToController.text.trim().isEmpty) {
+        AppUtils.showSnackBar(context, 'Please specify the Donation Destination', isError: true);
+        return;
+      }
+      if (_receiptNoController.text.trim().isEmpty) {
+        AppUtils.showSnackBar(context, 'Receipt No is required when Donation Amount is entered', isError: true);
+        return;
+      }
     }
 
     setState(() => _isSaving = true);
@@ -433,9 +443,11 @@ class _AddGuestViewState extends State<AddGuestView> {
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 value: _selectedDonationTo,
-                decoration: const InputDecoration(
-                  labelText: 'Donation To / Destination',
-                  prefixIcon: Icon(Icons.account_balance_outlined),
+                decoration: InputDecoration(
+                  labelText: (double.tryParse(_donationController.text.trim()) ?? 0) > 0
+                      ? 'Donation To / Destination *'
+                      : 'Donation To / Destination',
+                  prefixIcon: const Icon(Icons.account_balance_outlined),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'Jamiul Futuh', child: Text('Jamiul Futuh')),
