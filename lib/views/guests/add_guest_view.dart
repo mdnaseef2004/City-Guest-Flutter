@@ -5,10 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../core/utils.dart';
+import '../../models/profile.dart';
 import '../../models/visited_place.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/guest_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/supabase_service.dart';
 import '../../services/thank_you_message_service.dart';
 
 class AddGuestView extends StatefulWidget {
@@ -53,7 +55,7 @@ class _AddGuestViewState extends State<AddGuestView> {
       _handledByController.text = authProvider.profile!.name;
     }
     if (authProvider.isSuperAdmin) {
-      GuestService.getUsers().then((users) {
+      SupabaseService.getUsers().then((users) {
         if (mounted) {
           setState(() {
             _allAdminUsers = users;
