@@ -296,6 +296,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
       'donation': 'Donation (₹)',
       'receipt': 'Receipt No',
       'handled_by': 'Handled By',
+      'created_by': 'Admin Name (Entered By)',
       'remarks': 'Remarks',
       'date': 'Date Entered',
     };
@@ -482,6 +483,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
           'donation': 'Donation (₹)',
           'receipt': 'Receipt No',
           'handled_by': 'Handled By',
+          'created_by': 'Admin Name (Entered By)',
           'remarks': 'Remarks',
           'date': 'Date Entered',
         };
@@ -502,6 +504,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
               case 'donation': row.add(r.donationAmount); break;
               case 'receipt': row.add(r.receiptNo ?? ''); break;
               case 'handled_by': row.add(r.handledBy ?? ''); break;
+              case 'created_by': row.add(r.createdByName ?? 'Unknown'); break;
               case 'remarks': row.add(r.remarks ?? ''); break;
               case 'date': row.add(AppUtils.formatDate(r.createdAt)); break;
               default: row.add('');
