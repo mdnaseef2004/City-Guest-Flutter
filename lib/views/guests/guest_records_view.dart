@@ -620,9 +620,9 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
       }
 
       String baseTitle = "All Guest Report";
-      if (guestProvider.selectedCreatedBy != null && _adminUsers.isNotEmpty) {
+      if (guestProvider.selectedCreatedBy.isNotEmpty && _adminUsers.isNotEmpty) {
         final creator = _adminUsers.firstWhere(
-          (u) => u.id == guestProvider.selectedCreatedBy,
+          (u) => u.id == guestProvider.selectedCreatedBy.first,
           orElse: () => Profile(id: '', email: '', role: '', name: 'Admin', createdAt: DateTime.now(), isActive: true),
         );
         baseTitle = "Report of ${creator.name}";
@@ -1277,8 +1277,8 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                             guestProvider.selectedState != null ||
                             guestProvider.selectedCountry != null ||
                             guestProvider.selectedPurpose != null ||
-                            guestProvider.selectedHandledBy != null ||
-                            guestProvider.selectedCreatedBy != null)
+                            guestProvider.selectedHandledBy.isNotEmpty ||
+                            guestProvider.selectedCreatedBy.isNotEmpty)
                           InkWell(
                             onTap: () {
                               _searchController.clear();
