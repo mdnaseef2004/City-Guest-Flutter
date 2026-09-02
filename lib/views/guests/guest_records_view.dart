@@ -9,6 +9,7 @@ import '../../core/responsive_layout.dart';
 import '../../core/utils.dart';
 import '../../models/guest_visit.dart';
 import '../../models/profile.dart';
+import '../../models/visited_place.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/guest_provider.dart';
 import '../../services/excel_service.dart';
