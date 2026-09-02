@@ -131,18 +131,37 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
   void _openEditDialog(GuestVisit guest) {
     final nameController = TextEditingController(text: guest.guestName);
     final phoneController = TextEditingController(text: guest.phoneNumber);
-    final occupationController = TextEditingController(text: guest.occupation);
+    final occupationController = TextEditingController(text: guest.occupation ?? '');
+    final createdAtDateController = TextEditingController(text: guest.createdAt.toString().substring(0, 10));
     final placeController = TextEditingController(text: guest.place);
     final districtController = TextEditingController(text: guest.district);
     final purposeController = TextEditingController(text: guest.purpose);
-    final donationController = TextEditingController(text: guest.donationAmount.toString());
-    final receiptController = TextEditingController(text: guest.receiptNo);
-    final handledByController = TextEditingController(text: guest.handledBy);
-    final remarksController = TextEditingController(text: guest.remarks);
+    final donationController = TextEditingController(text: guest.donationAmount > 0 ? guest.donationAmount.toStringAsFixed(0) : '');
+    
+    String? selectedDonationTo = guest.donationTo;
+    String initialCustDonTo = '';
+    if (selectedDonationTo != null && selectedDonationTo != 'Jamiul Futuh' && selectedDonationTo != 'Shorbahana') {
+      initialCustDonTo = selectedDonationTo;
+      selectedDonationTo = 'Others';
+    }
+    final customDonationToController = TextEditingController(text: initialCustDonTo);
+    final receiptController = TextEditingController(text: guest.receiptNo ?? '');
+    
+    final pickedFromController = TextEditingController(text: guest.pickedFrom ?? '');
+    final pickedDateController = TextEditingController(text: guest.pickedDate ?? '');
+    final pickedTimeController = TextEditingController(text: guest.pickedTime ?? '');
+    
+    String? guestReturned = guest.guestReturned;
+    final returnDateController = TextEditingController(text: guest.returnDate ?? '');
+    final returnTimeController = TextEditingController(text: guest.returnTime ?? '');
+
+    final handledByController = TextEditingController(text: guest.handledBy ?? '');
+    final remarksController = TextEditingController(text: guest.remarks ?? '');
 
     String? state = guest.state;
     String? country = guest.country;
     bool isIntl = guest.isInternational;
+    final List<VisitedPlaceInput> visitedPlacesList = List<VisitedPlaceInput>.from(guest.visitedPlaces);
 
     showDialog(
       context: context,
@@ -150,21 +169,27 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text('Edit Guest: ${guest.guestName}'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Edit Guest: ${guest.guestName}', style: const TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: SizedBox(
-                  width: 500,
+                  width: 550,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Guest Name *')),
-                      const SizedBox(height: 10),
-                      TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone Number *')),
-                      const SizedBox(height: 10),
-                      TextField(controller: placeController, decoration: const InputDecoration(labelText: 'Address / Place *')),
-                      const SizedBox(height: 10),
+                      TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Guest Name *', prefixIcon: Icon(Icons.person_outline))),
+                      const SizedBox(height: 12),
+                      TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone Number *', prefixIcon: Icon(Icons.phone_outlined))),
+                      const SizedBox(height: 12),
+                      TextField(controller: occupationController, decoration: const InputDecoration(labelText: 'Occupation / Profession', prefixIcon: Icon(Icons.work_outline))),
+                      const SizedBox(height: 12),
+                      TextField(controller: placeController, decoration: const InputDecoration(labelText: 'Address / Place *', prefixIcon: Icon(Icons.location_on_outlined))),
+                      const SizedBox(height: 12),
+                      
                       CheckboxListTile(
-                        title: const Text('International Guest'),
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('International Guest', style: TextStyle(fontWeight: FontWeight.bold)),
                         value: isIntl,
                         onChanged: (v) => setDialogState(() {
                           isIntl = v ?? false;
@@ -175,33 +200,149 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                           }
                         }),
                       ),
-                      const SizedBox(height: 10),
-                      if (!isIntl)
+                      const SizedBox(height: 8),
+
+                      if (!isIntl) ...[
                         DropdownButtonFormField<String>(
-                          initialValue: AppConstants.indianStates.contains(state) ? state : null,
-                          decoration: const InputDecoration(labelText: 'State'),
-                          items: AppConstants.indianStates.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                          onChanged: (val) => setDialogState(() => state = val),
-                        )
-                      else
+                          isExpanded: true,
+                          value: AppConstants.indianStates.contains(state) ? state : null,
+                          decoration: const InputDecoration(labelText: 'State *', prefixIcon: Icon(Icons.map_outlined)),
+                          items: AppConstants.indianStates.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
+                          onChanged: (val) => setDialogState(() {
+                            state = val;
+                            districtController.clear();
+                          }),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(controller: districtController, decoration: const InputDecoration(labelText: 'District *', prefixIcon: Icon(Icons.my_location))),
+                      ] else ...[
                         DropdownButtonFormField<String>(
-                          initialValue: AppConstants.countries.contains(country) ? country : null,
-                          decoration: const InputDecoration(labelText: 'Country'),
-                          items: AppConstants.countries.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                          isExpanded: true,
+                          value: AppConstants.countries.contains(country) ? country : null,
+                          decoration: const InputDecoration(labelText: 'Country *', prefixIcon: Icon(Icons.public)),
+                          items: AppConstants.countries.map((c) => DropdownMenuItem(value: c, child: Text(c, overflow: TextOverflow.ellipsis))).toList(),
                           onChanged: (val) => setDialogState(() => country = val),
                         ),
-                      const SizedBox(height: 10),
-                      TextField(controller: districtController, decoration: const InputDecoration(labelText: 'District')),
-                      const SizedBox(height: 10),
-                      TextField(controller: purposeController, decoration: const InputDecoration(labelText: 'Purpose *')),
-                      const SizedBox(height: 10),
-                      TextField(controller: donationController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Donation (₹)')),
-                      const SizedBox(height: 10),
-                      TextField(controller: receiptController, decoration: const InputDecoration(labelText: 'Receipt No')),
-                      const SizedBox(height: 10),
-                      TextField(controller: handledByController, decoration: const InputDecoration(labelText: 'Handled By')),
-                      const SizedBox(height: 10),
-                      TextField(controller: remarksController, maxLines: 2, decoration: const InputDecoration(labelText: 'Remarks')),
+                      ],
+                      const SizedBox(height: 12),
+
+                      // Visit Date / Entry Date
+                      TextField(
+                        controller: createdAtDateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(labelText: 'Visit Date (Optional - Defaults to Today)', prefixIcon: Icon(Icons.calendar_today_outlined)),
+                        onTap: () async {
+                          final d = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.tryParse(createdAtDateController.text) ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (d != null) {
+                            setDialogState(() {
+                              createdAtDateController.text = DateFormat('yyyy-MM-dd').format(d);
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextField(controller: purposeController, decoration: const InputDecoration(labelText: 'Purpose of Visit *', prefixIcon: Icon(Icons.flag_outlined))),
+                      const SizedBox(height: 12),
+                      
+                      TextField(
+                        controller: donationController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Donation Amount (₹)', prefixIcon: Icon(Icons.currency_rupee)),
+                        onChanged: (_) => setDialogState(() {}),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Donation To / Destination Dropdown
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        value: selectedDonationTo,
+                        decoration: InputDecoration(
+                          labelText: (double.tryParse(donationController.text.trim()) ?? 0) > 0 ? 'Donation To / Destination *' : 'Donation To / Destination',
+                          prefixIcon: const Icon(Icons.account_balance_outlined),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Jamiul Futuh', child: Text('Jamiul Futuh')),
+                          DropdownMenuItem(value: 'Shorbahana', child: Text('Shorbahana')),
+                          DropdownMenuItem(value: 'Others', child: Text('Others')),
+                        ],
+                        onChanged: (val) => setDialogState(() => selectedDonationTo = val),
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (selectedDonationTo == 'Others') ...[
+                        TextField(
+                          controller: customDonationToController,
+                          decoration: const InputDecoration(labelText: 'Specify Donation Destination *', prefixIcon: Icon(Icons.edit_note_outlined)),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      TextField(controller: receiptController, decoration: const InputDecoration(labelText: 'Receipt No (Required if donation entered)', prefixIcon: Icon(Icons.receipt_long_outlined))),
+                      const SizedBox(height: 12),
+
+                      // Picked Details
+                      TextField(controller: pickedFromController, decoration: const InputDecoration(labelText: 'Picked From', prefixIcon: Icon(Icons.directions_car_outlined))),
+                      const SizedBox(height: 12),
+
+                      TextField(controller: handledByController, decoration: const InputDecoration(labelText: 'Handled By *', prefixIcon: Icon(Icons.badge_outlined))),
+                      const SizedBox(height: 12),
+
+                      TextField(controller: remarksController, maxLines: 2, decoration: const InputDecoration(labelText: 'Remarks', prefixIcon: Icon(Icons.note_alt_outlined))),
+                      const SizedBox(height: 16),
+
+                      // Visited Places List
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Visited Places List', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                          OutlinedButton.icon(
+                            onPressed: () => setDialogState(() => visitedPlacesList.add(VisitedPlaceInput())),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Add Place', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      ...visitedPlacesList.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final vp = entry.value;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: const InputDecoration(labelText: 'Place Name', isDense: true),
+                                      controller: TextEditingController(text: vp.visitedPlace)..selection = TextSelection.collapsed(offset: vp.visitedPlace.length),
+                                      onChanged: (v) => vp.visitedPlace = v,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                    onPressed: () => setDialogState(() => visitedPlacesList.removeAt(idx)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -209,25 +350,53 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
               actions: [
                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                   onPressed: () async {
                     final isSuperAdmin = Provider.of<AuthProvider>(context, listen: false).isSuperAdmin;
-                    final updates = {
+                    final donationAmt = double.tryParse(donationController.text.trim()) ?? 0.0;
+
+                    if (donationAmt > 0) {
+                      if (selectedDonationTo == null || selectedDonationTo!.isEmpty) {
+                        AppUtils.showSnackBar(context, 'Donation Destination is required when Donation Amount is entered', isError: true);
+                        return;
+                      }
+                      if (selectedDonationTo == 'Others' && customDonationToController.text.trim().isEmpty) {
+                        AppUtils.showSnackBar(context, 'Please specify the Donation Destination', isError: true);
+                        return;
+                      }
+                      if (receiptController.text.trim().isEmpty) {
+                        AppUtils.showSnackBar(context, 'Receipt No is required when Donation Amount is entered', isError: true);
+                        return;
+                      }
+                    }
+
+                    final finalDonationTo = selectedDonationTo == 'Others'
+                        ? (customDonationToController.text.trim().isNotEmpty ? customDonationToController.text.trim() : 'Others')
+                        : selectedDonationTo;
+
+                    final updates = <String, dynamic>{
                       'guest_name': nameController.text.trim(),
                       'phone_number': phoneController.text.trim(),
-                      'occupation': occupationController.text.trim(),
+                      'occupation': occupationController.text.trim().isNotEmpty ? occupationController.text.trim() : null,
                       'place': placeController.text.trim(),
                       'district': districtController.text.trim(),
                       'state': isIntl ? null : state,
                       'country': isIntl ? country : null,
                       'is_international': isIntl,
                       'purpose': purposeController.text.trim(),
-                      'donation_amount': double.tryParse(donationController.text.trim()) ?? 0.0,
-                      'receipt_no': receiptController.text.trim(),
+                      'donation_amount': donationAmt,
+                      'receipt_no': receiptController.text.trim().isNotEmpty ? receiptController.text.trim() : null,
+                      'donation_to': finalDonationTo,
+                      'picked_from': pickedFromController.text.trim(),
                       'handled_by': handledByController.text.trim(),
                       'remarks': remarksController.text.trim(),
                     };
 
-                    await GuestService.updateGuest(guest.id, updates, guest.visitedPlaces);
+                    if (createdAtDateController.text.trim().isNotEmpty) {
+                      updates['created_at'] = '${createdAtDateController.text.trim()}T00:00:00.000Z';
+                    }
+
+                    await GuestService.updateGuest(guest.id, updates, visitedPlacesList);
 
                     if (isSuperAdmin && remarksController.text.trim().isNotEmpty && guest.createdBy != null) {
                       final superAdminName = Provider.of<AuthProvider>(context, listen: false).profile?.name ?? 'Super Admin';
