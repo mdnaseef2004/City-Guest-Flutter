@@ -549,18 +549,23 @@ class _EventsViewState extends State<EventsView> {
   }
 
   Widget _buildAdminPerformanceCard() {
+    // Group filtered events by handled_by name
+    final Map<String, List<EventModel>> eventsByAdmin = {};
+    for (final e in _filteredEvents) {
+      final name = e.handledBy.trim().isNotEmpty ? e.handledBy.trim() : 'Unknown';
+      if (!eventsByAdmin.containsKey(name)) {
+        eventsByAdmin[name] = [];
+      }
+      eventsByAdmin[name]!.add(e);
+    }
+
     final totalEvents = _filteredEvents.length;
     final totalAttendees = _filteredEvents.fold<int>(0, (sum, e) => sum + e.membersCount);
     final avgAttendees = totalEvents > 0 ? (totalAttendees / totalEvents).round() : 0;
 
-    EventModel? topEvent;
-    if (_filteredEvents.isNotEmpty) {
-      topEvent = _filteredEvents.reduce((a, b) => a.membersCount > b.membersCount ? a : b);
-    }
-
     String selectedAdminsLabel = _selectedHandledByAdmins.isEmpty
-        ? 'All Admin Performance Analytics'
-        : 'Admin Performance (${_selectedHandledByAdmins.length} Selected)';
+        ? '👑 All Admins Event Performance Breakdown'
+        : '👑 Admin Performance Breakdown (${_selectedHandledByAdmins.join(", ")})';
 
     return Container(
       width: double.infinity,
@@ -582,30 +587,129 @@ class _EventsViewState extends State<EventsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  selectedAdminsLabel,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        selectedAdminsLabel,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
+
+          // Total Summary Stat Boxes
           Wrap(
-            spacing: 16,
-            runSpacing: 12,
+            spacing: 12,
+            runSpacing: 10,
             children: [
-              _buildPerfStatBox('Total Events', '$totalEvents', Icons.event_available_outlined, Colors.blue),
-              _buildPerfStatBox('Total Attendees', NumberFormat('#,##,###').format(totalAttendees), Icons.groups_outlined, Colors.green),
-              _buildPerfStatBox('Avg Attendees / Event', NumberFormat('#,##,###').format(avgAttendees), Icons.pie_chart_outline_rounded, Colors.purple),
-              if (topEvent != null)
-                _buildPerfStatBox('Top Single Event', '${topEvent.eventName} (${NumberFormat("#,##,###").format(topEvent.membersCount)})', Icons.emoji_events_outlined, Colors.amber),
+              _buildPerfStatBox('Total Events Handled', '$totalEvents Events', Icons.event_available_outlined, Colors.blue),
+              _buildPerfStatBox('Total Participants', NumberFormat('#,##,###').format(totalAttendees), Icons.groups_outlined, Colors.green),
+              _buildPerfStatBox('Avg Participants / Event', NumberFormat('#,##,###').format(avgAttendees), Icons.pie_chart_outline_rounded, Colors.purple),
             ],
           ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+
+          // Per Admin Breakdown Section
+          const Text('Admin Event Performance Details:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          const SizedBox(height: 8),
+
+          ...eventsByAdmin.entries.map((entry) {
+            final adminName = entry.key;
+            final adminEvents = entry.value;
+            final adminTotalEvents = adminEvents.length;
+            final adminTotalAttendees = adminEvents.fold<int>(0, (s, e) => s + e.membersCount);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.person_pin_rounded, size: 18, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text(adminName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                        ),
+                        child: Text(
+                          '$adminTotalEvents Events · ${NumberFormat("#,##,###").format(adminTotalAttendees)} Participants',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // List of Event Names & Participants Count for this admin
+                  Column(
+                    children: adminEvents.map((e) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${e.eventName} (${e.eventPlace})',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(e.eventDate),
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${NumberFormat("#,##,###").format(e.membersCount)} participants',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -629,6 +733,7 @@ class _EventsViewState extends State<EventsView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
             ],
           ),
         ],
