@@ -123,6 +123,10 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
     } else if (preset == 'This Week') {
       final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
       range = DateTimeRange(start: startOfWeek, end: now);
+    } else if (preset == 'Last Month') {
+      final startOfLastMonth = DateTime(now.year, now.month - 1, 1);
+      final endOfLastMonth = DateTime(now.year, now.month, 0);
+      range = DateTimeRange(start: startOfLastMonth, end: endOfLastMonth);
     } else {
       // This Month
       final startOfMonth = DateTime(now.year, now.month, 1);
@@ -234,6 +238,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                       _buildPresetButton('Yesterday'),
                     ] else if (_tabController.index == 1) ...[
                       _buildPresetButton('This Month'),
+                      _buildPresetButton('Last Month'),
                     ] else ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
