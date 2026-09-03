@@ -120,5 +120,23 @@ class ExportService {
       filename: 'events-analytics-report.pdf',
       mimeType: 'application/pdf',
     );
+  // Export Outreach Department Executive PDF
+  static Future<void> exportOutreachDepartmentPdf({
+    required String filterLabel,
+    required List<GuestVisit> guests,
+    required List<EventModel> events,
+    required List<String> selectedAdminNames,
+  }) async {
+    final pdfBytes = await PdfService.generateOutreachDepartmentPdf(
+      filterLabel: filterLabel,
+      guests: guests,
+      events: events,
+      selectedAdminNames: selectedAdminNames,
+    );
+    await FileSaverHelper.downloadFile(
+      bytes: pdfBytes,
+      filename: 'outreach-department-report.pdf',
+      mimeType: 'application/pdf',
+    );
   }
 }

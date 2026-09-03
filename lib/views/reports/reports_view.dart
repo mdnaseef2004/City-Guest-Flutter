@@ -3,8 +3,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../core/utils.dart';
+import '../../models/event_model.dart';
 import '../../models/guest_visit.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/event_service.dart';
 import '../../services/excel_service.dart';
 import '../../services/export_service.dart';
 import '../../services/guest_service.dart';
@@ -28,11 +30,13 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
   DateTime _monthlyDate = DateTime.now();
   DateTimeRange? _customDateRange;
   DateTimeRange? _donationDateRange;
+  List<EventModel> _adminPerfEvents = [];
+  List<String> _selectedAdminNames = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadReportData();
   }
@@ -95,9 +99,20 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
           isSuperAdmin: isSuperAdmin,
         );
         rows.sort((a, b) => b.donationAmount.compareTo(a.donationAmount));
-      } else if (index == 4 || index == 5) {
-        // Sub Admin / Super Admin (Super Admin view)
-        rows = await GuestService.getAllGuestsForReports(isSuperAdmin: true);
+      } else if (index == 4) {
+        // Admin Performance
+        final startOfMonth = DateTime(_monthlyDate.year, _monthlyDate.month, 1);
+        final endOfMonth = DateTime(_monthlyDate.year, _monthlyDate.month + 1, 0);
+        final startStr = DateFormat('yyyy-MM-dd').format(startOfMonth);
+        final endStr = DateFormat('yyyy-MM-dd').format(endOfMonth);
+
+        rows = await GuestService.getAllGuestsForReports(
+          startDate: startStr,
+          endDate: endStr,
+          isSuperAdmin: true,
+        );
+        final events = await EventService.getEvents(true);
+        _adminPerfEvents = events.where((e) => DateFormat('yyyy-MM-dd').format(e.eventDate).compareTo(startStr) >= 0 && DateFormat('yyyy-MM-dd').format(e.eventDate).compareTo(endStr) <= 0).toList();
       }
 
       if (mounted) {
@@ -248,8 +263,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
             const Tab(height: 36, text: 'Monthly'),
             const Tab(height: 36, text: 'Custom Range'),
             const Tab(height: 36, text: 'Donations'),
-            if (isSuperAdmin) const Tab(height: 36, text: 'Sub Admin'),
-            if (isSuperAdmin) const Tab(height: 36, text: 'Super Admin'),
+            if (isSuperAdmin) const Tab(height: 36, text: 'Admin Performance'),
           ],
         ),
       ),
@@ -311,14 +325,20 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                       icon: Icons.picture_as_pdf_outlined,
                       color: AppColors.primary,
                       onPressed: () async {
-                        if (_reportRows.isEmpty) return;
-                        if (_tabController.index == 3) {
+                        if (_tabController.index == 4) {
+                          await ExportService.exportOutreachDepartmentPdf(
+                            filterLabel: DateFormat('MMMM yyyy').format(_monthlyDate),
+                            guests: _reportRows,
+                            events: _adminPerfEvents,
+                            selectedAdminNames: _selectedAdminNames,
+                          );
+                        } else if (_tabController.index == 3) {
                           await ExportService.exportDonationsPdf(
                             reportTitle: 'Donations Report',
                             guests: _reportRows,
                           );
                         } else {
-                          PdfService.printReceipt(_reportRows.first);
+                          if (_reportRows.isNotEmpty) PdfService.printReceipt(_reportRows.first);
                         }
                       },
                     ),
