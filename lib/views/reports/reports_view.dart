@@ -221,6 +221,60 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
     );
   }
 
+  Widget _buildSelectMonthDropdown() {
+    final now = DateTime.now();
+    final List<Map<String, dynamic>> options = [
+      {'key': '', 'label': 'Select Month'},
+    ];
+
+    for (int y = now.year; y >= now.year - 2; y--) {
+      final maxM = (y == now.year) ? now.month : 12;
+      for (int m = maxM; m >= 1; m--) {
+        final dt = DateTime(y, m, 1);
+        final key = DateFormat('yyyy-MM').format(dt);
+        final label = DateFormat('MMMM yyyy').format(dt);
+        options.add({'key': key, 'label': label, 'date': dt});
+      }
+    }
+
+    final currentKey = DateFormat('yyyy-MM').format(_monthlyDate);
+    final selectedKey = options.any((opt) => opt['key'] == currentKey) ? currentKey : '';
+
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: AppColors.primary, width: 1.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedKey,
+          isDense: true,
+          icon: const Icon(Icons.arrow_drop_down, size: 18, color: AppColors.primary),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+          onChanged: (val) {
+            if (val == null || val.isEmpty) return;
+            final match = options.firstWhere((opt) => opt['key'] == val, orElse: () => {});
+            if (match.containsKey('date')) {
+              setState(() {
+                _monthlyDate = match['date'] as DateTime;
+              });
+              _loadReportData();
+            }
+          },
+          items: options.map((opt) {
+            return DropdownMenuItem<String>(
+              value: opt['key'] as String,
+              child: Text(opt['label'] as String),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildExportButton({
     required String label,
     required IconData icon,
@@ -290,9 +344,10 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                     if (_tabController.index == 0) ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
-                    ] else if (_tabController.index == 1) ...[
+                    ] else if (_tabController.index == 1 || _tabController.index == 4) ...[
                       _buildPresetButton('This Month'),
                       _buildPresetButton('Last Month'),
+                      _buildSelectMonthDropdown(),
                     ] else if (_tabController.index == 2) ...[
                       _buildDatePicker('Start Date', _customDateRange?.start, (date) {
                         setState(() {
