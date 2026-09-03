@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:excel/excel.dart';
 import '../models/event_model.dart';
+import '../models/guest_visit.dart';
 import '../services/pdf_service.dart';
 import '../utils/file_saver_helper.dart';
 
@@ -85,6 +86,22 @@ class ExportService {
     await FileSaverHelper.downloadFile(
       bytes: pdfBytes,
       filename: 'admin-events-performance-report.pdf',
+      mimeType: 'application/pdf',
+    );
+  }
+
+  // Export Donations PDF
+  static Future<void> exportDonationsPdf({
+    required String reportTitle,
+    required List<GuestVisit> guests,
+  }) async {
+    final pdfBytes = await PdfService.generateDonationsPdfReport(
+      reportTitle: reportTitle,
+      guests: guests,
+    );
+    await FileSaverHelper.downloadFile(
+      bytes: pdfBytes,
+      filename: 'donations-report.pdf',
       mimeType: 'application/pdf',
     );
   }

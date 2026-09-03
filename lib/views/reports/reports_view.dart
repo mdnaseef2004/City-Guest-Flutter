@@ -6,6 +6,7 @@ import '../../core/utils.dart';
 import '../../models/guest_visit.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/excel_service.dart';
+import '../../services/export_service.dart';
 import '../../services/guest_service.dart';
 import '../../services/pdf_service.dart';
 
@@ -309,8 +310,16 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                       label: 'PDF',
                       icon: Icons.picture_as_pdf_outlined,
                       color: AppColors.primary,
-                      onPressed: () {
-                        if (_reportRows.isNotEmpty) PdfService.printReceipt(_reportRows.first);
+                      onPressed: () async {
+                        if (_reportRows.isEmpty) return;
+                        if (_tabController.index == 3) {
+                          await ExportService.exportDonationsPdf(
+                            reportTitle: 'Donations Report',
+                            guests: _reportRows,
+                          );
+                        } else {
+                          PdfService.printReceipt(_reportRows.first);
+                        }
                       },
                     ),
                   ],
