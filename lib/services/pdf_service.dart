@@ -1356,9 +1356,8 @@ class PdfService {
                       ),
                     ),
 
-                    // Events Table with repeatHeader: true
+                    // Events Table
                     pw.Table(
-                      repeatHeader: true,
                       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
                       columnWidths: const {
                         0: pw.FlexColumnWidth(3),
