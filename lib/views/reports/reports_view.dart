@@ -362,6 +362,24 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                         });
                         _loadReportData();
                       }),
+                    ] else if (_tabController.index == 3) ...[
+                      _buildPresetButton('Today'),
+                      _buildPresetButton('Yesterday'),
+                      _buildPresetButton('This Month'),
+                      _buildSelectMonthDropdown(),
+                      _buildDatePicker('Start Date', _donationDateRange?.start, (date) {
+                        setState(() {
+                          _donationDateRange = DateTimeRange(start: date, end: _donationDateRange?.end ?? date);
+                        });
+                        _loadReportData();
+                      }),
+                      const Text('›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      _buildDatePicker('End Date', _donationDateRange?.end, (date) {
+                        setState(() {
+                          _donationDateRange = DateTimeRange(start: _donationDateRange?.start ?? date, end: date);
+                        });
+                        _loadReportData();
+                      }),
                     ] else ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
