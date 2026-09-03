@@ -267,8 +267,19 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
             if (val == null || val.isEmpty) return;
             final match = options.firstWhere((opt) => opt['key'] == val, orElse: () => {});
             if (match.containsKey('date')) {
+              final dt = match['date'] as DateTime;
+              final startOfMonth = DateTime(dt.year, dt.month, 1);
+              final endOfMonth = DateTime(dt.year, dt.month + 1, 0);
               setState(() {
-                _monthlyDate = match['date'] as DateTime;
+                _monthlyDate = dt;
+                final range = DateTimeRange(start: startOfMonth, end: endOfMonth);
+                if (_tabController.index == 2) {
+                  _customDateRange = range;
+                } else if (_tabController.index == 3) {
+                  _donationDateRange = range;
+                } else if (_tabController.index == 4) {
+                  _adminPerfDateRange = range;
+                }
               });
               _loadReportData();
             }
@@ -504,22 +515,30 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                       ),
-                    ] else if (_tabController.index == 2) ...[
+                    ] else if (_tabController.index == 2 || _tabController.index == 3) ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
                       _buildPresetButton('This Week'),
                       _buildPresetButton('This Month'),
                       _buildSelectMonthDropdown(),
-                      _buildDatePicker('Start Date', _customDateRange?.start, (date) {
+                      _buildDatePicker('Start Date', _tabController.index == 3 ? _donationDateRange?.start : _customDateRange?.start, (date) {
                         setState(() {
-                          _customDateRange = DateTimeRange(start: date, end: _customDateRange?.end ?? date);
+                          if (_tabController.index == 3) {
+                            _donationDateRange = DateTimeRange(start: date, end: _donationDateRange?.end ?? date);
+                          } else {
+                            _customDateRange = DateTimeRange(start: date, end: _customDateRange?.end ?? date);
+                          }
                         });
                         _loadReportData();
                       }),
                       const Text('›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      _buildDatePicker('End Date', _customDateRange?.end, (date) {
+                      _buildDatePicker('End Date', _tabController.index == 3 ? _donationDateRange?.end : _customDateRange?.end, (date) {
                         setState(() {
-                          _customDateRange = DateTimeRange(start: _customDateRange?.start ?? date, end: date);
+                          if (_tabController.index == 3) {
+                            _donationDateRange = DateTimeRange(start: _donationDateRange?.start ?? date, end: date);
+                          } else {
+                            _customDateRange = DateTimeRange(start: _customDateRange?.start ?? date, end: date);
+                          }
                         });
                         _loadReportData();
                       }),
