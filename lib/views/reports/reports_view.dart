@@ -5,7 +5,7 @@ import '../../config/constants.dart';
 import '../../core/utils.dart';
 import '../../models/event_model.dart';
 import '../../models/guest_visit.dart';
-import '../../models/user_model.dart';
+import '../../models/profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/event_service.dart';
 import '../../services/excel_service.dart';
@@ -35,7 +35,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
   DateTimeRange? _adminPerfDateRange;
   List<EventModel> _adminPerfEvents = [];
   List<String> _selectedAdminNames = [];
-  List<UserModel> _adminUsers = [];
+  List<Profile> _adminUsers = [];
 
   @override
   void initState() {
@@ -346,7 +346,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                     Flexible(
                       child: SingleChildScrollView(
                         child: Column(
-                          children: filteredAdmins.map((u) {
+                          children: filteredAdmins.map<Widget>((u) {
                             final isChecked = tempSelected.contains(u.name);
                             return CheckboxListTile(
                               dense: true,
