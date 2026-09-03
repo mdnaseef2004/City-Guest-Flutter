@@ -1543,7 +1543,7 @@ class PdfService {
                     children: [
                       pw.Text('Total Donation (Selected Filter)', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text('₹${NumberFormat("#,##,###").format(totalDonations)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat("#,##,###").format(totalDonations)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
                   pw.Container(height: 24, width: 1, color: PdfColors.grey300),
@@ -1551,7 +1551,7 @@ class PdfService {
                     children: [
                       pw.Text('Total to Shorbuhana', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text('₹${NumberFormat("#,##,###").format(shorbuhanaTotal)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat("#,##,###").format(shorbuhanaTotal)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
                   pw.Container(height: 24, width: 1, color: PdfColors.grey300),
@@ -1559,7 +1559,7 @@ class PdfService {
                     children: [
                       pw.Text('Total to Jamiul Futhuh', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text('₹${NumberFormat("#,##,###").format(jamiulFuthuhTotal)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat("#,##,###").format(jamiulFuthuhTotal)}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
                 ],
@@ -1589,7 +1589,7 @@ class PdfService {
                     pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Guest Name', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
                     pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Location', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
                     pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Donation To', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
-                    pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Amount (₹)', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Amount (Rs.)', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor))),
                     pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Receipt No', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
                     pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Date', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
                   ],
@@ -1601,7 +1601,7 @@ class PdfService {
                       pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(cleanPdfText(g.guestName), style: const pw.TextStyle(fontSize: 8.5))),
                       pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(cleanPdfText(g.place), style: const pw.TextStyle(fontSize: 8.5))),
                       pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(cleanPdfText(g.donationTo ?? '-'), style: const pw.TextStyle(fontSize: 8.5))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('₹${NumberFormat("#,##,###").format(g.donationAmount)}', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: primaryColor))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Rs. ${NumberFormat("#,##,###").format(g.donationAmount)}', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: primaryColor))),
                       pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(cleanPdfText(g.receiptNo ?? '-'), style: const pw.TextStyle(fontSize: 8.5))),
                       pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(DateFormat('dd MMM yyyy').format(g.createdAt), style: const pw.TextStyle(fontSize: 8.5))),
                     ],
@@ -1729,7 +1729,7 @@ class PdfService {
                     children: [
                       pw.Text('Total Donation', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text('₹${NumberFormat('#,##,###').format(totalDonations)}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat('#,##,###').format(totalDonations)}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
                   pw.Container(height: 24, width: 1, color: PdfColors.grey300),
@@ -1791,7 +1791,7 @@ class PdfService {
                     children: [
                       pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(cleanPdfText(adminName), style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
                       pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(NumberFormat('#,##,###').format(count), style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('₹${NumberFormat('#,##,###').format(donationsSum)}', style: const pw.TextStyle(fontSize: 9))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text('Rs. ${NumberFormat('#,##,###').format(donationsSum)}', style: const pw.TextStyle(fontSize: 9))),
                     ],
                   );
                 }),
