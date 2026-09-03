@@ -1324,12 +1324,13 @@ class PdfService {
             final adminEventsCount = adminEvents.length;
             final adminParticipantsCount = adminEvents.fold<int>(0, (sum, e) => sum + e.membersCount);
 
+            // Anchor Admin Banner + Table Column Header + First 2 rows together so header is never orphaned
             content.add(
-              pw.Container(
-                margin: const pw.EdgeInsets.only(bottom: 14),
+              pw.KeepTogether(
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
+                    pw.SizedBox(height: 10),
                     // Admin Header Banner
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1353,7 +1354,7 @@ class PdfService {
                     ),
                     pw.SizedBox(height: 4),
 
-                    // Events Table
+                    // Events Table Header + First 2 Rows
                     pw.Table(
                       border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
                       columnWidths: const {
@@ -1385,8 +1386,8 @@ class PdfService {
                             ),
                           ],
                         ),
-                        // Table Rows
-                        ...adminEvents.map((e) {
+                        // First 2 Rows
+                        ...adminEvents.take(2).map((e) {
                           return pw.TableRow(
                             children: [
                               pw.Padding(
@@ -1417,6 +1418,46 @@ class PdfService {
                 ),
               ),
             );
+
+            // Remaining Rows allowed to paginate across pages cleanly
+            if (adminEvents.length > 2) {
+              content.add(
+                pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
+                  columnWidths: const {
+                    0: pw.FlexColumnWidth(3),
+                    1: pw.FlexColumnWidth(2.5),
+                    2: pw.FlexColumnWidth(2),
+                    3: pw.FlexColumnWidth(2),
+                  },
+                  children: adminEvents.skip(2).map((e) {
+                    return pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text(cleanPdfText(e.eventName), style: const pw.TextStyle(fontSize: 8.5)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text(cleanPdfText(e.eventPlace), style: const pw.TextStyle(fontSize: 8.5)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text(DateFormat('dd MMM yyyy').format(e.eventDate), style: const pw.TextStyle(fontSize: 8.5)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text(
+                            NumberFormat('#,##,###').format(e.membersCount),
+                            style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              );
+            }
           });
 
           return content;
