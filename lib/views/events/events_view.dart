@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../core/utils.dart';
 import '../../models/event_model.dart';
+import '../../models/profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/event_service.dart';
 import '../../services/export_service.dart';
-import 'add_event_view.dart';
-
 import '../../services/notification_service.dart';
 import '../../services/pdf_service.dart';
+import '../../services/supabase_service.dart';
+import 'add_event_view.dart';
 
 class EventsView extends StatefulWidget {
   const EventsView({super.key});
@@ -23,6 +24,8 @@ class _EventsViewState extends State<EventsView> {
   bool _isLoading = true;
   List<EventModel> _allEvents = [];
   List<EventModel> _filteredEvents = [];
+  List<Profile> _adminUsers = [];
+  List<String> _selectedHandledByAdmins = [];
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _startDateController = TextEditingController();
@@ -336,9 +339,11 @@ class _EventsViewState extends State<EventsView> {
     setState(() => _isLoading = true);
     try {
       final list = await EventService.getEvents(isSuperAdmin);
+      final users = await SupabaseService.getUsers();
       if (mounted) {
         setState(() {
           _allEvents = list;
+          _adminUsers = users;
           _applyFilters();
           _isLoading = false;
         });
@@ -376,6 +381,14 @@ class _EventsViewState extends State<EventsView> {
           final orgMatch = e.organizedBy.toLowerCase().contains(query);
           final handledMatch = e.handledBy.toLowerCase().contains(query);
           if (!nameMatch && !placeMatch && !orgMatch && !handledMatch) return false;
+        }
+
+        // Multi-Select Admin Filter
+        if (_selectedHandledByAdmins.isNotEmpty) {
+          final matchesHandled = _selectedHandledByAdmins.any((adminName) =>
+            e.handledBy.toLowerCase().trim() == adminName.toLowerCase().trim()
+          );
+          if (!matchesHandled) return false;
         }
 
         // Date Range Filter
@@ -416,8 +429,212 @@ class _EventsViewState extends State<EventsView> {
       _startDateController.clear();
       _endDateController.clear();
       _selectedQuickFilter = null;
+      _selectedHandledByAdmins.clear();
       _applyFilters();
     });
+  }
+
+  void _showAdminSelectionDialog() {
+    final List<String> tempSelected = List<String>.from(_selectedHandledByAdmins);
+    final searchCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final query = searchCtrl.text.toLowerCase().trim();
+            final filteredAdmins = _adminUsers.where((u) => u.name.toLowerCase().contains(query)).toList();
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.badge_outlined, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('Select Admin Names', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              content: SizedBox(
+                width: 380,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: searchCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Search admin name...',
+                        prefixIcon: Icon(Icons.search, size: 18),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => setDialogState(() {
+                            tempSelected.clear();
+                            tempSelected.addAll(_adminUsers.map((u) => u.name));
+                          }),
+                          icon: const Icon(Icons.select_all, size: 16),
+                          label: const Text('Select All', style: TextStyle(fontSize: 12)),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => setDialogState(() {
+                            tempSelected.clear();
+                          }),
+                          icon: const Icon(Icons.deselect, size: 16),
+                          label: const Text('Deselect All', style: TextStyle(fontSize: 12, color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 1),
+                    const SizedBox(height: 6),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: filteredAdmins.map((u) {
+                            final isChecked = tempSelected.contains(u.name);
+                            return CheckboxListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              title: Text(
+                                '${u.name} (${u.role == "super_admin" ? "Super Admin" : "Sub Admin"})',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                              value: isChecked,
+                              activeColor: AppColors.primary,
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  if (val == true) {
+                                    tempSelected.add(u.name);
+                                  } else {
+                                    tempSelected.remove(u.name);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedHandledByAdmins = tempSelected;
+                      _applyFilters();
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  child: Text('Apply Filter (${tempSelected.length})'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAdminPerformanceCard() {
+    final totalEvents = _filteredEvents.length;
+    final totalAttendees = _filteredEvents.fold<int>(0, (sum, e) => sum + e.membersCount);
+    final avgAttendees = totalEvents > 0 ? (totalAttendees / totalEvents).round() : 0;
+
+    EventModel? topEvent;
+    if (_filteredEvents.isNotEmpty) {
+      topEvent = _filteredEvents.reduce((a, b) => a.membersCount > b.membersCount ? a : b);
+    }
+
+    String selectedAdminsLabel = _selectedHandledByAdmins.isEmpty
+        ? 'All Admin Performance Analytics'
+        : 'Admin Performance (${_selectedHandledByAdmins.length} Selected)';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 14, bottom: 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  selectedAdminsLabel,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 12,
+            children: [
+              _buildPerfStatBox('Total Events', '$totalEvents', Icons.event_available_outlined, Colors.blue),
+              _buildPerfStatBox('Total Attendees', NumberFormat('#,##,###').format(totalAttendees), Icons.groups_outlined, Colors.green),
+              _buildPerfStatBox('Avg Attendees / Event', NumberFormat('#,##,###').format(avgAttendees), Icons.pie_chart_outline_rounded, Colors.purple),
+              if (topEvent != null)
+                _buildPerfStatBox('Top Single Event', '${topEvent.eventName} (${NumberFormat("#,##,###").format(topEvent.membersCount)})', Icons.emoji_events_outlined, Colors.amber),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPerfStatBox(String label, String val, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   // Interactive Checkbox Modal for Column Selection
@@ -875,6 +1092,42 @@ class _EventsViewState extends State<EventsView> {
                                     ),
                                   ),
 
+                                  // Multi-Select Admin Filter Button
+                                  Container(
+                                    height: 38,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surface,
+                                      border: Border.all(
+                                        color: _selectedHandledByAdmins.isNotEmpty ? const Color(0xFF10B981) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                                        width: _selectedHandledByAdmins.isNotEmpty ? 1.8 : 1.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: InkWell(
+                                      onTap: _showAdminSelectionDialog,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.badge_outlined, size: 14, color: _selectedHandledByAdmins.isNotEmpty ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            _selectedHandledByAdmins.isEmpty
+                                                ? 'All Admin Names'
+                                                : '${_selectedHandledByAdmins.length} Admins Selected',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: _selectedHandledByAdmins.isNotEmpty ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(Icons.arrow_drop_down, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
                                   // Quick Filter Pills (Side-by-side)
                                   _buildFilterPill('Today', _selectedQuickFilter == 'today', () => _applyQuickDateFilter('today')),
                                   _buildFilterPill('Yesterday', _selectedQuickFilter == 'yesterday', () => _applyQuickDateFilter('yesterday')),
@@ -887,6 +1140,7 @@ class _EventsViewState extends State<EventsView> {
                                   if (_searchController.text.isNotEmpty ||
                                       _startDateController.text.isNotEmpty ||
                                       _endDateController.text.isNotEmpty ||
+                                      _selectedHandledByAdmins.isNotEmpty ||
                                       _selectedQuickFilter != null)
                                     InkWell(
                                       onTap: _clearFilters,
@@ -916,6 +1170,9 @@ class _EventsViewState extends State<EventsView> {
                         ],
                       ),
                     ),
+
+                    // Admin Performance Analytics Card
+                    _buildAdminPerformanceCard(),
 
                     const SizedBox(height: 16),
                     Text('Event Records', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
