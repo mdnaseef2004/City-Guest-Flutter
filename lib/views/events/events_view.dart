@@ -520,18 +520,7 @@ class _EventsViewState extends State<EventsView> {
           items: options.map((opt) {
             return DropdownMenuItem<String>(
               value: opt['key']!,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_month_outlined,
-                    size: 14,
-                    color: opt['key'] == _selectedMonthYearKey ? AppColors.primary : Colors.grey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(opt['label']!),
-                ],
-              ),
+              child: Text(opt['label']!),
             );
           }).toList(),
         ),
