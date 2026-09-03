@@ -47,6 +47,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
 
   List<String> _uniquePlaces = [];
   List<String> _uniquePurposes = [];
+  List<Profile> _adminUsers = [];
   String? _selectedQuickFilter;
   String? _selectedMonthYearKey;
 
