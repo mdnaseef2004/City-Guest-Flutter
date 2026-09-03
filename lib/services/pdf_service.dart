@@ -1617,6 +1617,8 @@ class PdfService {
     );
 
     return pdf.save();
+  }
+
   // Generate Outreach Department Executive Summary PDF Report
   static Future<Uint8List> generateOutreachDepartmentPdf({
     required String filterLabel,

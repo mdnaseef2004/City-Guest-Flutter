@@ -120,6 +120,8 @@ class ExportService {
       filename: 'events-analytics-report.pdf',
       mimeType: 'application/pdf',
     );
+  }
+
   // Export Outreach Department Executive PDF
   static Future<void> exportOutreachDepartmentPdf({
     required String filterLabel,
