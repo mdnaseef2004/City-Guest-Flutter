@@ -54,6 +54,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
   }
 
   void _handleTabChange() {
+    setState(() {});
     if (_tabController.indexIsChanging) return;
     _loadReportData();
   }
@@ -515,7 +516,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                       ),
-                    ] else if (_tabController.index == 2 || _tabController.index == 3) ...[
+                    ] else ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
                       _buildPresetButton('This Week'),
@@ -542,11 +543,6 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                         });
                         _loadReportData();
                       }),
-                    ] else ...[
-                      _buildPresetButton('Today'),
-                      _buildPresetButton('Yesterday'),
-                      _buildPresetButton('This Week'),
-                      _buildPresetButton('This Month'),
                     ],
 
                     // Export Action Buttons (Compact Sizing)
