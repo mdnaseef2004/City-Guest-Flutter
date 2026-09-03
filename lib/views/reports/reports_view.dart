@@ -504,6 +504,25 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                       ),
+                    ] else if (_tabController.index == 2) ...[
+                      _buildPresetButton('Today'),
+                      _buildPresetButton('Yesterday'),
+                      _buildPresetButton('This Week'),
+                      _buildPresetButton('This Month'),
+                      _buildSelectMonthDropdown(),
+                      _buildDatePicker('Start Date', _customDateRange?.start, (date) {
+                        setState(() {
+                          _customDateRange = DateTimeRange(start: date, end: _customDateRange?.end ?? date);
+                        });
+                        _loadReportData();
+                      }),
+                      const Text('›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      _buildDatePicker('End Date', _customDateRange?.end, (date) {
+                        setState(() {
+                          _customDateRange = DateTimeRange(start: _customDateRange?.start ?? date, end: date);
+                        });
+                        _loadReportData();
+                      }),
                     ] else ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
