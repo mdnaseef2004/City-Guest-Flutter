@@ -166,6 +166,41 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
     );
   }
 
+  Widget _buildDatePicker(String label, DateTime? value, Function(DateTime) onSelect) {
+    return InkWell(
+      onTap: () async {
+        final d = await showDatePicker(
+          context: context,
+          initialDate: value ?? DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime.now(),
+        );
+        if (d != null) onSelect(d);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(color: AppColors.primary, width: 1.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              value != null ? DateFormat('dd MMM yyyy').format(value) : label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down, size: 16, color: AppColors.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildExportButton({
     required String label,
     required IconData icon,
@@ -239,6 +274,20 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                     ] else if (_tabController.index == 1) ...[
                       _buildPresetButton('This Month'),
                       _buildPresetButton('Last Month'),
+                    ] else if (_tabController.index == 2) ...[
+                      _buildDatePicker('Start Date', _customDateRange?.start, (date) {
+                        setState(() {
+                          _customDateRange = DateTimeRange(start: date, end: _customDateRange?.end ?? date);
+                        });
+                        _loadReportData();
+                      }),
+                      const Text('›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      _buildDatePicker('End Date', _customDateRange?.end, (date) {
+                        setState(() {
+                          _customDateRange = DateTimeRange(start: _customDateRange?.start ?? date, end: date);
+                        });
+                        _loadReportData();
+                      }),
                     ] else ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
