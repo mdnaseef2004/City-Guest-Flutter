@@ -548,8 +548,38 @@ class _EventsViewState extends State<EventsView> {
     );
   }
 
-  Widget _buildAdminPerformanceCard() {
-    // Group filtered events by handled_by name
+  Widget _buildAdminPerformanceButton() {
+    return Container(
+      height: 42,
+      decoration: BoxDecoration(
+        color: const Color(0xFF10B981),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _showAdminPerformanceModalDialog,
+        icon: const Icon(Icons.analytics_outlined, size: 16, color: Colors.white),
+        label: const Text(
+          '👑 Admin Performance',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF10B981),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+    );
+  }
+
+  void _showAdminPerformanceModalDialog() {
     final Map<String, List<EventModel>> eventsByAdmin = {};
     for (final e in _filteredEvents) {
       final name = e.handledBy.trim().isNotEmpty ? e.handledBy.trim() : 'Unknown';
@@ -561,157 +591,207 @@ class _EventsViewState extends State<EventsView> {
 
     final totalEvents = _filteredEvents.length;
     final totalAttendees = _filteredEvents.fold<int>(0, (sum, e) => sum + e.membersCount);
-    final avgAttendees = totalEvents > 0 ? (totalAttendees / totalEvents).round() : 0;
+    bool isGeneratingPdf = false;
 
-    String selectedAdminsLabel = _selectedHandledByAdmins.isEmpty
-        ? '👑 All Admins Event Performance Breakdown'
-        : '👑 Admin Performance Breakdown (${_selectedHandledByAdmins.join(", ")})';
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 14, bottom: 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        selectedAdminsLabel,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Total Summary Stat Boxes
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            children: [
-              _buildPerfStatBox('Total Events Handled', '$totalEvents Events', Icons.event_available_outlined, Colors.blue),
-              _buildPerfStatBox('Total Participants', NumberFormat('#,##,###').format(totalAttendees), Icons.groups_outlined, Colors.green),
-              _buildPerfStatBox('Avg Participants / Event', NumberFormat('#,##,###').format(avgAttendees), Icons.pie_chart_outline_rounded, Colors.purple),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-
-          // Per Admin Breakdown Section
-          const Text('Admin Event Performance Details:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 8),
-
-          ...eventsByAdmin.entries.map((entry) {
-            final adminName = entry.key;
-            final adminEvents = entry.value;
-            final adminTotalEvents = adminEvents.length;
-            final adminTotalAttendees = adminEvents.fold<int>(0, (s, e) => s + e.membersCount);
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.person_pin_rounded, size: 18, color: AppColors.primary),
-                          const SizedBox(width: 6),
-                          Text(adminName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF10B981), width: 0.8),
-                        ),
-                        child: Text(
-                          '$adminTotalEvents Events · ${NumberFormat("#,##,###").format(adminTotalAttendees)} Participants',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
-                        ),
-                      ),
-                    ],
+                  const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 24),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Admin Event Performance',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-
-                  // List of Event Names & Participants Count for this admin
-                  Column(
-                    children: adminEvents.map((e) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${e.eventName} (${e.eventPlace})',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              DateFormat('dd MMM yyyy').format(e.eventDate),
-                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${NumberFormat("#,##,###").format(e.membersCount)} participants',
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                  ElevatedButton.icon(
+                    onPressed: isGeneratingPdf
+                        ? null
+                        : () async {
+                            setModalState(() => isGeneratingPdf = true);
+                            try {
+                              await ExportService.exportAdminEventPerformancePdf(
+                                reportTitle: 'Admin Event Performance Report',
+                                eventsByAdmin: eventsByAdmin,
+                                totalEvents: totalEvents,
+                                totalParticipants: totalAttendees,
+                              );
+                              if (context.mounted) {
+                                NotificationService.showSuccess(context, 'PDF downloaded successfully!');
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                NotificationService.showError(context, 'Failed to download PDF: $e');
+                              }
+                            } finally {
+                              setModalState(() => isGeneratingPdf = false);
+                            }
+                          },
+                    icon: isGeneratingPdf
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.picture_as_pdf_rounded, size: 16, color: Colors.white),
+                    label: Text(isGeneratingPdf ? 'Exporting...' : 'Download PDF', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                   ),
                 ],
               ),
+              content: SizedBox(
+                width: 650,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Total Summary Cards
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                const Text('Total Events Handled', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                const SizedBox(height: 2),
+                                Text('$totalEvents', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                              ],
+                            ),
+                            Container(height: 24, width: 1, color: Colors.grey.shade300),
+                            Column(
+                              children: [
+                                const Text('Total Participants', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                const SizedBox(height: 2),
+                                Text(NumberFormat('#,##,###').format(totalAttendees), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                              ],
+                            ),
+                            Container(height: 24, width: 1, color: Colors.grey.shade300),
+                            Column(
+                              children: [
+                                const Text('Active Admins', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                const SizedBox(height: 2),
+                                Text('${eventsByAdmin.length}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Admin Event Breakdown:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 10),
+
+                      ...eventsByAdmin.entries.map((entry) {
+                        final adminName = entry.key;
+                        final adminEvents = entry.value;
+                        final adminTotalEvents = adminEvents.length;
+                        final adminTotalAttendees = adminEvents.fold<int>(0, (s, e) => s + e.membersCount);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.person_pin_rounded, size: 18, color: AppColors.primary),
+                                      const SizedBox(width: 6),
+                                      Text(adminName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                    ],
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                                    ),
+                                    child: Text(
+                                      '$adminTotalEvents Events · ${NumberFormat("#,##,###").format(adminTotalAttendees)} Participants',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+
+                              // List of Event Names & Participants Count for this admin
+                              Column(
+                                children: adminEvents.map((e) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.primary),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '${e.eventName} (${e.eventPlace})',
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Text(
+                                          DateFormat('dd MMM yyyy').format(e.eventDate),
+                                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '${NumberFormat("#,##,###").format(e.membersCount)} participants',
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close'),
+                ),
+              ],
             );
-          }),
-        ],
-      ),
+          },
+        );
+      },
     );
   }
 
@@ -1101,7 +1181,7 @@ class _EventsViewState extends State<EventsView> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Row 1: Search Field + Admin Multi-Select Checkbox + Download Button
+                          // Row 1: Search Field + Admin Multi-Select Checkbox + Admin Performance Modal + Download Button
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final isNarrow = constraints.maxWidth < 600;
@@ -1113,6 +1193,8 @@ class _EventsViewState extends State<EventsView> {
                                     Row(
                                       children: [
                                         Expanded(child: _buildAdminSelectionButton()),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: _buildAdminPerformanceButton()),
                                       ],
                                     ),
                                   ],
@@ -1123,13 +1205,15 @@ class _EventsViewState extends State<EventsView> {
                                 children: [
                                   Expanded(
                                     child: Container(
-                                      constraints: const BoxConstraints(maxWidth: 420),
+                                      constraints: const BoxConstraints(maxWidth: 340),
                                       child: _buildBiggerSearchBar(),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 8),
                                   _buildAdminSelectionButton(),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 8),
+                                  _buildAdminPerformanceButton(),
+                                  const SizedBox(width: 8),
                                   _buildDownloadReportButton(),
                                 ],
                               );
@@ -1324,9 +1408,6 @@ class _EventsViewState extends State<EventsView> {
                         ],
                       ),
                     ),
-
-                    // Admin Performance Analytics Card
-                    _buildAdminPerformanceCard(),
 
                     const SizedBox(height: 16),
                     Text('Event Records', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),

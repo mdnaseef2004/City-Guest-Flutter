@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:excel/excel.dart';
+import '../models/event_model.dart';
 import '../services/pdf_service.dart';
 import '../utils/file_saver_helper.dart';
 
@@ -64,6 +65,26 @@ class ExportService {
     await FileSaverHelper.downloadFile(
       bytes: pdfBytes,
       filename: '${roleLabel.toLowerCase()}-performance-report.pdf',
+      mimeType: 'application/pdf',
+    );
+  }
+
+  // Export Admin Event Performance PDF
+  static Future<void> exportAdminEventPerformancePdf({
+    required String reportTitle,
+    required Map<String, List<EventModel>> eventsByAdmin,
+    required int totalEvents,
+    required int totalParticipants,
+  }) async {
+    final pdfBytes = await PdfService.generateAdminEventPerformancePdf(
+      reportTitle: reportTitle,
+      eventsByAdmin: eventsByAdmin,
+      totalEvents: totalEvents,
+      totalParticipants: totalParticipants,
+    );
+    await FileSaverHelper.downloadFile(
+      bytes: pdfBytes,
+      filename: 'admin-events-performance-report.pdf',
       mimeType: 'application/pdf',
     );
   }
