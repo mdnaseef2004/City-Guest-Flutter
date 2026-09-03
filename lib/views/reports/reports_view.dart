@@ -5,12 +5,14 @@ import '../../config/constants.dart';
 import '../../core/utils.dart';
 import '../../models/event_model.dart';
 import '../../models/guest_visit.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/event_service.dart';
 import '../../services/excel_service.dart';
 import '../../services/export_service.dart';
 import '../../services/guest_service.dart';
 import '../../services/pdf_service.dart';
+import '../../services/supabase_service.dart';
 
 class ReportsView extends StatefulWidget {
   const ReportsView({super.key});
@@ -33,6 +35,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
   DateTimeRange? _adminPerfDateRange;
   List<EventModel> _adminPerfEvents = [];
   List<String> _selectedAdminNames = [];
+  List<UserModel> _adminUsers = [];
 
   @override
   void initState() {
@@ -114,6 +117,9 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
         );
         final events = await EventService.getEvents(true);
         _adminPerfEvents = events.where((e) => DateFormat('yyyy-MM-dd').format(e.eventDate).compareTo(startStr) >= 0 && DateFormat('yyyy-MM-dd').format(e.eventDate).compareTo(endStr) <= 0).toList();
+        if (_adminUsers.isEmpty) {
+          _adminUsers = await SupabaseService.getUsers();
+        }
       }
 
       if (mounted) {
@@ -278,6 +284,119 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
     );
   }
 
+  void _showAdminSelectionDialog() {
+    final List<String> tempSelected = List<String>.from(_selectedAdminNames);
+    final searchCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final query = searchCtrl.text.toLowerCase().trim();
+            final filteredAdmins = _adminUsers.where((u) => u.name.toLowerCase().contains(query)).toList();
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.badge_outlined, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('Select Admin Names', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              content: SizedBox(
+                width: 380,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: searchCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Search admin name...',
+                        prefixIcon: Icon(Icons.search, size: 18),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => setDialogState(() {
+                            tempSelected.clear();
+                            tempSelected.addAll(_adminUsers.map((u) => u.name));
+                          }),
+                          icon: const Icon(Icons.select_all, size: 16),
+                          label: const Text('Select All', style: TextStyle(fontSize: 12)),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => setDialogState(() {
+                            tempSelected.clear();
+                          }),
+                          icon: const Icon(Icons.deselect, size: 16),
+                          label: const Text('Deselect All', style: TextStyle(fontSize: 12, color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 1),
+                    const SizedBox(height: 6),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: filteredAdmins.map((u) {
+                            final isChecked = tempSelected.contains(u.name);
+                            return CheckboxListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              title: Text(
+                                '${u.name} (${u.role == "super_admin" ? "Super Admin" : "Sub Admin"})',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                              value: isChecked,
+                              activeColor: AppColors.primary,
+                              onChanged: (val) {
+                                setDialogState(() {
+                                  if (val == true) {
+                                    tempSelected.add(u.name);
+                                  } else {
+                                    tempSelected.remove(u.name);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _selectedAdminNames = List<String>.from(tempSelected);
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Apply Selection'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildExportButton({
     required String label,
     required IconData icon,
@@ -370,6 +489,21 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                         });
                         _loadReportData();
                       }),
+                      OutlinedButton.icon(
+                        onPressed: _showAdminSelectionDialog,
+                        icon: const Icon(Icons.check_box_outlined, size: 16, color: AppColors.primary),
+                        label: Text(
+                          _selectedAdminNames.isEmpty
+                              ? 'Select Admins (All)'
+                              : '${_selectedAdminNames.length} Admin(s) Selected',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          side: const BorderSide(color: AppColors.primary, width: 1.2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                      ),
                     ] else ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
