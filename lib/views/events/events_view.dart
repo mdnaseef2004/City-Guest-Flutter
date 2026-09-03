@@ -623,11 +623,15 @@ class _EventsViewState extends State<EventsView> {
                                 totalParticipants: totalAttendees,
                               );
                               if (context.mounted) {
-                                NotificationService.showSuccess(context, 'PDF downloaded successfully!');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('PDF downloaded successfully!'), backgroundColor: Colors.green),
+                                );
                               }
                             } catch (e) {
                               if (context.mounted) {
-                                NotificationService.showError(context, 'Failed to download PDF: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to download PDF: $e'), backgroundColor: Colors.red),
+                                );
                               }
                             } finally {
                               setModalState(() => isGeneratingPdf = false);
