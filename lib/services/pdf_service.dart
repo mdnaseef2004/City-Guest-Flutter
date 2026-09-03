@@ -1633,6 +1633,17 @@ class PdfService {
     // 1. Overall Summaries
     final totalGuests = guests.length;
     final totalDonations = guests.fold(0.0, (sum, g) => sum + g.donationAmount);
+    double shorbuhanaTotal = 0.0;
+    double jamiulFuthuhTotal = 0.0;
+    for (final g in guests) {
+      final dest = (g.donationTo ?? '').toLowerCase();
+      if (dest.contains('shorb') || dest.contains('shurb')) {
+        shorbuhanaTotal += g.donationAmount;
+      } else if (dest.contains('jami') || dest.contains('jf') || dest.contains('futh')) {
+        jamiulFuthuhTotal += g.donationAmount;
+      }
+    }
+
     final totalEvents = events.length;
     final totalAttendees = events.fold(0, (sum, e) => sum + e.membersCount);
 
@@ -1708,7 +1719,7 @@ class PdfService {
           // Overview Dashboard Cards
           content.add(
             pw.Container(
-              padding: const pw.EdgeInsets.all(10),
+              padding: const pw.EdgeInsets.all(8),
               decoration: pw.BoxDecoration(
                 color: PdfColor.fromInt(0xFFF0FDF4),
                 border: pw.Border.all(color: primaryColor, width: 1),
@@ -1719,33 +1730,49 @@ class PdfService {
                 children: [
                   pw.Column(
                     children: [
-                      pw.Text('Total Guests', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text('Total Guests', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text(NumberFormat('#,##,###').format(totalGuests), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text(NumberFormat('#,##,###').format(totalGuests), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
-                  pw.Container(height: 24, width: 1, color: PdfColors.grey300),
+                  pw.Container(height: 22, width: 1, color: PdfColors.grey300),
                   pw.Column(
                     children: [
-                      pw.Text('Total Donation', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text('Total Donation', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text('Rs. ${NumberFormat('#,##,###').format(totalDonations)}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat('#,##,###').format(totalDonations)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
-                  pw.Container(height: 24, width: 1, color: PdfColors.grey300),
+                  pw.Container(height: 22, width: 1, color: PdfColors.grey300),
                   pw.Column(
                     children: [
-                      pw.Text('Total Events', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text('Total to Shorbuhana', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text('$totalEvents', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat('#,##,###').format(shorbuhanaTotal)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
-                  pw.Container(height: 24, width: 1, color: PdfColors.grey300),
+                  pw.Container(height: 22, width: 1, color: PdfColors.grey300),
                   pw.Column(
                     children: [
-                      pw.Text('Total Event Attendees', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                      pw.Text('Total to Jamiul Futhuh', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
                       pw.SizedBox(height: 2),
-                      pw.Text(NumberFormat('#,##,###').format(totalAttendees), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                      pw.Text('Rs. ${NumberFormat('#,##,###').format(jamiulFuthuhTotal)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                    ],
+                  ),
+                  pw.Container(height: 22, width: 1, color: PdfColors.grey300),
+                  pw.Column(
+                    children: [
+                      pw.Text('Total Events', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                      pw.SizedBox(height: 2),
+                      pw.Text('$totalEvents', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                    ],
+                  ),
+                  pw.Container(height: 22, width: 1, color: PdfColors.grey300),
+                  pw.Column(
+                    children: [
+                      pw.Text('Event Attendees', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                      pw.SizedBox(height: 2),
+                      pw.Text(NumberFormat('#,##,###').format(totalAttendees), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
                     ],
                   ),
                 ],
