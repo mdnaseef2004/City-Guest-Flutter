@@ -150,7 +150,11 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
     }
 
     setState(() {
-      if (_tabController.index == 3) {
+      if (_tabController.index == 0) {
+        _dailyDate = range.start;
+      } else if (_tabController.index == 1) {
+        _monthlyDate = range.start;
+      } else if (_tabController.index == 3) {
         _donationDateRange = range;
       } else {
         _customDateRange = range;
