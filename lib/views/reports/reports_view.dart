@@ -228,11 +228,18 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    // Quick Date Presets (Compact 34px Pills)
-                    _buildPresetButton('Today'),
-                    _buildPresetButton('Yesterday'),
-                    _buildPresetButton('This Week'),
-                    _buildPresetButton('This Month'),
+                    // Quick Date Presets based on selected Tab
+                    if (_tabController.index == 0) ...[
+                      _buildPresetButton('Today'),
+                      _buildPresetButton('Yesterday'),
+                    ] else if (_tabController.index == 1) ...[
+                      _buildPresetButton('This Month'),
+                    ] else ...[
+                      _buildPresetButton('Today'),
+                      _buildPresetButton('Yesterday'),
+                      _buildPresetButton('This Week'),
+                      _buildPresetButton('This Month'),
+                    ],
 
                     // Export Action Buttons (Compact Sizing)
                     _buildExportButton(
