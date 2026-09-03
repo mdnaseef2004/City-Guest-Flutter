@@ -18,6 +18,7 @@ class ReportsView extends StatefulWidget {
 
 class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ScrollController _hScrollController = ScrollController();
   bool _isLoading = false;
   List<GuestVisit> _reportRows = [];
 
@@ -39,6 +40,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
   void dispose() {
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
+    _hScrollController.dispose();
     super.dispose();
   }
 
@@ -311,35 +313,43 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                 : _reportRows.isEmpty
                     ? const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No records found for selected period.')))
                     : Card(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text('Guest Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Phone', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Address', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Location', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Purpose', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Donation (₹)', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Receipt No', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Handled By', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                            ],
-                            rows: _reportRows.map((g) {
-                              return DataRow(
-                                cells: [
-                                  DataCell(Text(g.guestName, style: const TextStyle(fontWeight: FontWeight.bold))),
-                                  DataCell(Text(g.phoneNumber)),
-                                  DataCell(Text(g.place)),
-                                  DataCell(Text(g.isInternational ? (g.country ?? 'Intl') : (g.state ?? g.district))),
-                                  DataCell(Text(g.purpose)),
-                                  DataCell(Text(g.donationAmount > 0 ? AppUtils.formatCurrency(g.donationAmount) : '-')),
-                                  DataCell(Text(g.receiptNo ?? '-')),
-                                  DataCell(Text(g.handledBy ?? '-')),
-                                  DataCell(Text(AppUtils.formatDate(g.createdAt))),
-                                ],
-                              );
-                            }).toList(),
+                        child: Scrollbar(
+                          controller: _hScrollController,
+                          thumbVisibility: true,
+                          trackVisibility: true,
+                          thickness: 8.0,
+                          radius: const Radius.circular(4),
+                          child: SingleChildScrollView(
+                            controller: _hScrollController,
+                            scrollDirection: Axis.horizontal,
+                            child: DataTable(
+                              columns: const [
+                                DataColumn(label: Text('Guest Name', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Phone', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Address', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Location', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Purpose', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Donation (₹)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Receipt No', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Handled By', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ],
+                              rows: _reportRows.map((g) {
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Text(g.guestName, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                    DataCell(Text(g.phoneNumber)),
+                                    DataCell(Text(g.place)),
+                                    DataCell(Text(g.isInternational ? (g.country ?? 'Intl') : (g.state ?? g.district))),
+                                    DataCell(Text(g.purpose)),
+                                    DataCell(Text(g.donationAmount > 0 ? AppUtils.formatCurrency(g.donationAmount) : '-')),
+                                    DataCell(Text(g.receiptNo ?? '-')),
+                                    DataCell(Text(g.handledBy ?? '-')),
+                                    DataCell(Text(AppUtils.formatDate(g.createdAt))),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
                       ),
