@@ -1326,96 +1326,100 @@ class PdfService {
 
             content.add(
               pw.Container(
-                margin: const pw.EdgeInsets.only(bottom: 16),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                margin: const pw.EdgeInsets.only(top: 10, bottom: 12),
+                child: pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
+                  columnWidths: const {
+                    0: pw.FlexColumnWidth(3.2),
+                    1: pw.FlexColumnWidth(2.3),
+                    2: pw.FlexColumnWidth(2),
+                    3: pw.FlexColumnWidth(2),
+                  },
                   children: [
-                    pw.SizedBox(height: 10),
-                    // Admin Header Banner
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: pw.BoxDecoration(
-                        color: primaryColor,
-                        borderRadius: const pw.BorderRadius.only(
-                          topLeft: pw.Radius.circular(4),
-                          topRight: pw.Radius.circular(4),
-                        ),
-                      ),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text(
+                    // Row 0: Admin Name & Overview Banner integrated inside the Table itself!
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: primaryColor),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: pw.Text(
                             'ADMIN: ${adminName.toUpperCase()}',
                             style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
                           ),
-                          pw.Text(
-                            'Total Events: $adminEventsCount   |   Total Participants: ${NumberFormat("#,##,###").format(adminParticipantsCount)}',
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: pw.Text(
+                            'Events: $adminEventsCount',
                             style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
                           ),
-                        ],
-                      ),
-                    ),
-
-                    // Events Table
-                    pw.Table(
-                      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.6),
-                      columnWidths: const {
-                        0: pw.FlexColumnWidth(3),
-                        1: pw.FlexColumnWidth(2.5),
-                        2: pw.FlexColumnWidth(2),
-                        3: pw.FlexColumnWidth(2),
-                      },
-                      children: [
-                        // Table Header
-                        pw.TableRow(
-                          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                          children: [
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(5),
-                              child: pw.Text('Event Name', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(5),
-                              child: pw.Text('Venue / Place', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(5),
-                              child: pw.Text('Event Date', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                            ),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(5),
-                              child: pw.Text('Participants Count', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
-                            ),
-                          ],
                         ),
-                        // Event Rows
-                        ...adminEvents.map((e) {
-                          return pw.TableRow(
-                            children: [
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(5),
-                                child: pw.Text(cleanPdfText(e.eventName), style: const pw.TextStyle(fontSize: 8.5)),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(5),
-                                child: pw.Text(cleanPdfText(e.eventPlace), style: const pw.TextStyle(fontSize: 8.5)),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(5),
-                                child: pw.Text(DateFormat('dd MMM yyyy').format(e.eventDate), style: const pw.TextStyle(fontSize: 8.5)),
-                              ),
-                              pw.Padding(
-                                padding: const pw.EdgeInsets.all(5),
-                                child: pw.Text(
-                                  NumberFormat('#,##,###').format(e.membersCount),
-                                  style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: primaryColor),
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: pw.Text(
+                            'Total Participants:',
+                            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: pw.Text(
+                            NumberFormat("#,##,###").format(adminParticipantsCount),
+                            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                          ),
+                        ),
                       ],
                     ),
+
+                    // Row 1: Column Headings
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text('Event Name', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text('Venue / Place', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text('Event Date', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(5),
+                          child: pw.Text('Participants Count', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                        ),
+                      ],
+                    ),
+
+                    // Row 2+: Event Rows
+                    ...adminEvents.map((e) {
+                      return pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(5),
+                            child: pw.Text(cleanPdfText(e.eventName), style: const pw.TextStyle(fontSize: 8.5)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(5),
+                            child: pw.Text(cleanPdfText(e.eventPlace), style: const pw.TextStyle(fontSize: 8.5)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(5),
+                            child: pw.Text(DateFormat('dd MMM yyyy').format(e.eventDate), style: const pw.TextStyle(fontSize: 8.5)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(5),
+                            child: pw.Text(
+                              NumberFormat('#,##,###').format(e.membersCount),
+                              style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                   ],
                 ),
               ),
