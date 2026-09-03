@@ -47,9 +47,88 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
 
   List<String> _uniquePlaces = [];
   List<String> _uniquePurposes = [];
-  List<Profile> _adminUsers = [];
-
   String? _selectedQuickFilter;
+  String? _selectedMonthYearKey;
+
+  List<Map<String, String>> _generateMonthYearOptions() {
+    final List<Map<String, String>> options = [
+      {'key': '', 'label': '📅 Select Month'},
+    ];
+
+    final now = DateTime.now();
+    for (int i = 0; i < 24; i++) {
+      final dt = DateTime(now.year, now.month - i, 1);
+      final key = DateFormat('yyyy-MM').format(dt);
+      final label = DateFormat('MMMM yyyy').format(dt);
+      options.add({'key': key, 'label': label});
+    }
+
+    return options;
+  }
+
+  void _onMonthYearSelected(String? key, GuestProvider provider, bool isSuperAdmin) {
+    setState(() {
+      _selectedMonthYearKey = key;
+      _selectedQuickFilter = null;
+
+      if (key == null || key.isEmpty) {
+        _startDateController.clear();
+        _endDateController.clear();
+        provider.setDateRange(null, null, isSuperAdmin);
+      } else {
+        final parts = key.split('-');
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+
+        final start = DateTime(year, month, 1);
+        final end = DateTime(year, month + 1, 0);
+
+        final startStr = DateFormat('yyyy-MM-dd').format(start);
+        final endStr = DateFormat('yyyy-MM-dd').format(end);
+
+        _startDateController.text = startStr;
+        _endDateController.text = endStr;
+        provider.setDateRange(startStr, endStr, isSuperAdmin);
+      }
+    });
+  }
+
+  Widget _buildSelectMonthDropdown(GuestProvider provider, bool isSuperAdmin) {
+    final options = _generateMonthYearOptions();
+    final isSelected = _selectedMonthYearKey != null && _selectedMonthYearKey!.isNotEmpty;
+
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: isSelected ? const Color(0xFF10B981) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+          width: isSelected ? 1.8 : 1.2,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedMonthYearKey ?? '',
+          isDense: true,
+          icon: Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
+          ),
+          onChanged: (key) => _onMonthYearSelected(key, provider, isSuperAdmin),
+          items: options.map((opt) {
+            return DropdownMenuItem<String>(
+              value: opt['key'],
+              child: Text(opt['label']!),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -1267,6 +1346,7 @@ class _GuestRecordsViewState extends State<GuestRecordsView> {
                         _buildFilterPill('Yesterday', _selectedQuickFilter == 'yesterday', () => _applyQuickDateFilter('yesterday', guestProvider, isSuperAdmin)),
                         _buildFilterPill('This Week', _selectedQuickFilter == 'week', () => _applyQuickDateFilter('week', guestProvider, isSuperAdmin)),
                         _buildFilterPill('This Month', _selectedQuickFilter == 'month', () => _applyQuickDateFilter('month', guestProvider, isSuperAdmin)),
+                        _buildSelectMonthDropdown(guestProvider, isSuperAdmin),
 
                         // Clear Filters Button
                         if (guestProvider.startDate != null ||
