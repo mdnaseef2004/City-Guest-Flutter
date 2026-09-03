@@ -629,10 +629,47 @@ class _EventsViewState extends State<EventsView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-              Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAdminSelectionButton() {
+    final isSelected = _selectedHandledByAdmins.isNotEmpty;
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: isSelected ? const Color(0xFF10B981) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+          width: isSelected ? 2.0 : 1.2,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        onTap: _showAdminSelectionDialog,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.badge_outlined, size: 16, color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              _selectedHandledByAdmins.isEmpty
+                  ? 'All Admin Names'
+                  : '${_selectedHandledByAdmins.length} Admins Selected',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }
@@ -959,12 +996,22 @@ class _EventsViewState extends State<EventsView> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Row 1: Search Field (Full width on mobile, side-by-side with Download button on desktop)
+                          // Row 1: Search Field + Admin Multi-Select Checkbox + Download Button
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final isNarrow = constraints.maxWidth < 600;
                               if (isNarrow) {
-                                return _buildBiggerSearchBar();
+                                return Column(
+                                  children: [
+                                    _buildBiggerSearchBar(),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(child: _buildAdminSelectionButton()),
+                                      ],
+                                    ),
+                                  ],
+                                );
                               }
                               return Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -975,7 +1022,9 @@ class _EventsViewState extends State<EventsView> {
                                       child: _buildBiggerSearchBar(),
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 12),
+                                  _buildAdminSelectionButton(),
+                                  const SizedBox(width: 12),
                                   _buildDownloadReportButton(),
                                 ],
                               );
