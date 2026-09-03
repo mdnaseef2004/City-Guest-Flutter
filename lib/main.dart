@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'config/constants.dart';
@@ -16,6 +17,17 @@ import 'views/main_navigation_shell.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = true;
+
+  // Enable Android Edge-to-Edge System UI Mode
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      navigationBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      navigationBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   try {
     // Initialize Supabase Backend connection
