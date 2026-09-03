@@ -31,6 +31,7 @@ class _EventsViewState extends State<EventsView> {
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _endDateController = TextEditingController();
   String? _selectedQuickFilter;
+  String? _selectedMonthYearKey;
 
   // Available Export Columns
   final List<Map<String, String>> _availableColumns = [
@@ -429,9 +430,113 @@ class _EventsViewState extends State<EventsView> {
       _startDateController.clear();
       _endDateController.clear();
       _selectedQuickFilter = null;
+      _selectedMonthYearKey = null;
       _selectedHandledByAdmins.clear();
       _applyFilters();
     });
+  }
+
+  List<Map<String, String>> _generateMonthYearOptions() {
+    final List<Map<String, String>> options = [
+      {'key': '', 'label': '📅 Select Month'},
+    ];
+
+    final Set<String> keys = {};
+    for (final e in _allEvents) {
+      final key = DateFormat('yyyy-MM').format(e.eventDate);
+      keys.add(key);
+    }
+
+    final now = DateTime.now();
+    for (int i = 0; i < 24; i++) {
+      final dt = DateTime(now.year, now.month - i, 1);
+      final key = DateFormat('yyyy-MM').format(dt);
+      keys.add(key);
+    }
+
+    final sortedKeys = keys.toList()..sort((a, b) => b.compareTo(a));
+
+    for (final key in sortedKeys) {
+      final parts = key.split('-');
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final dt = DateTime(year, month, 1);
+      final label = DateFormat('MMMM yyyy').format(dt);
+      options.add({'key': key, 'label': label});
+    }
+
+    return options;
+  }
+
+  void _onMonthYearSelected(String? key) {
+    setState(() {
+      _selectedMonthYearKey = key;
+      _selectedQuickFilter = null;
+
+      if (key == null || key.isEmpty) {
+        _startDateController.clear();
+        _endDateController.clear();
+      } else {
+        final parts = key.split('-');
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+
+        final start = DateTime(year, month, 1);
+        final end = DateTime(year, month + 1, 0);
+
+        _startDateController.text = DateFormat('yyyy-MM-dd').format(start);
+        _endDateController.text = DateFormat('yyyy-MM-dd').format(end);
+      }
+      _applyFilters();
+    });
+  }
+
+  Widget _buildSelectMonthDropdown() {
+    final options = _generateMonthYearOptions();
+    final isSelected = _selectedMonthYearKey != null && _selectedMonthYearKey!.isNotEmpty;
+
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(
+          color: isSelected ? const Color(0xFF10B981) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+          width: isSelected ? 1.8 : 1.2,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedMonthYearKey ?? '',
+          isDense: true,
+          icon: Icon(Icons.arrow_drop_down, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
+          ),
+          onChanged: _onMonthYearSelected,
+          items: options.map((opt) {
+            return DropdownMenuItem<String>(
+              value: opt['key']!,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.calendar_month_outlined,
+                    size: 14,
+                    color: opt['key'] == _selectedMonthYearKey ? AppColors.primary : Colors.grey,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(opt['label']!),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
   }
 
   void _showAdminSelectionDialog() {
@@ -1334,41 +1439,8 @@ class _EventsViewState extends State<EventsView> {
                                     ),
                                   ),
 
-                                  // Multi-Select Admin Filter Button
-                                  Container(
-                                    height: 38,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surface,
-                                      border: Border.all(
-                                        color: _selectedHandledByAdmins.isNotEmpty ? const Color(0xFF10B981) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-                                        width: _selectedHandledByAdmins.isNotEmpty ? 1.8 : 1.2,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: InkWell(
-                                      onTap: _showAdminSelectionDialog,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.badge_outlined, size: 14, color: _selectedHandledByAdmins.isNotEmpty ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            _selectedHandledByAdmins.isEmpty
-                                                ? 'All Admin Names'
-                                                : '${_selectedHandledByAdmins.length} Admins Selected',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: _selectedHandledByAdmins.isNotEmpty ? AppColors.primary : Theme.of(context).colorScheme.onSurface,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Icon(Icons.arrow_drop_down, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                                  // Select Month & Year Dropdown Filter
+                                  _buildSelectMonthDropdown(),
 
                                   // Quick Filter Pills (Side-by-side)
                                   _buildFilterPill('Today', _selectedQuickFilter == 'today', () => _applyQuickDateFilter('today')),
@@ -1383,6 +1455,7 @@ class _EventsViewState extends State<EventsView> {
                                       _startDateController.text.isNotEmpty ||
                                       _endDateController.text.isNotEmpty ||
                                       _selectedHandledByAdmins.isNotEmpty ||
+                                      (_selectedMonthYearKey != null && _selectedMonthYearKey!.isNotEmpty) ||
                                       _selectedQuickFilter != null)
                                     InkWell(
                                       onTap: _clearFilters,
