@@ -7,7 +7,16 @@
 -keep class io.flutter.provider.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# Keep serialized JSON model fields
+# Keep all plugin classes and generated registries
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+
+# Ignore warnings for missing third-party references during R8 optimization
+-dontwarn **
+-dontnote **
+-ignorewarnings
+
+# Keep Gson / JSON model field names
+-keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
@@ -20,5 +29,10 @@
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 
-# OneSignal
+# OneSignal & Notifications
 -keep class com.onesignal.** { *; }
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+
+# PDF & Printing
+-keep class net.nfdk.** { *; }
+-keep class com.printing.** { *; }
