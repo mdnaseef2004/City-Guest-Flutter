@@ -30,6 +30,7 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
   DateTime _monthlyDate = DateTime.now();
   DateTimeRange? _customDateRange;
   DateTimeRange? _donationDateRange;
+  DateTimeRange? _adminPerfDateRange;
   List<EventModel> _adminPerfEvents = [];
   List<String> _selectedAdminNames = [];
 
@@ -101,10 +102,10 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
         rows.sort((a, b) => b.donationAmount.compareTo(a.donationAmount));
       } else if (index == 4) {
         // Admin Performance
-        final startOfMonth = DateTime(_monthlyDate.year, _monthlyDate.month, 1);
-        final endOfMonth = DateTime(_monthlyDate.year, _monthlyDate.month + 1, 0);
-        final startStr = DateFormat('yyyy-MM-dd').format(startOfMonth);
-        final endStr = DateFormat('yyyy-MM-dd').format(endOfMonth);
+        final start = _adminPerfDateRange?.start ?? DateTime(_monthlyDate.year, _monthlyDate.month, 1);
+        final end = _adminPerfDateRange?.end ?? DateTime(_monthlyDate.year, _monthlyDate.month + 1, 0);
+        final startStr = DateFormat('yyyy-MM-dd').format(start);
+        final endStr = DateFormat('yyyy-MM-dd').format(end);
 
         rows = await GuestService.getAllGuestsForReports(
           startDate: startStr,
@@ -156,6 +157,8 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
         _monthlyDate = range.start;
       } else if (_tabController.index == 3) {
         _donationDateRange = range;
+      } else if (_tabController.index == 4) {
+        _adminPerfDateRange = range;
       } else {
         _customDateRange = range;
       }
@@ -344,39 +347,26 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
                     if (_tabController.index == 0) ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
-                    ] else if (_tabController.index == 1 || _tabController.index == 4) ...[
+                    ] else if (_tabController.index == 1) ...[
                       _buildPresetButton('This Month'),
                       _buildPresetButton('Last Month'),
                       _buildSelectMonthDropdown(),
-                    ] else if (_tabController.index == 2) ...[
-                      _buildDatePicker('Start Date', _customDateRange?.start, (date) {
-                        setState(() {
-                          _customDateRange = DateTimeRange(start: date, end: _customDateRange?.end ?? date);
-                        });
-                        _loadReportData();
-                      }),
-                      const Text('›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      _buildDatePicker('End Date', _customDateRange?.end, (date) {
-                        setState(() {
-                          _customDateRange = DateTimeRange(start: _customDateRange?.start ?? date, end: date);
-                        });
-                        _loadReportData();
-                      }),
-                    ] else if (_tabController.index == 3) ...[
+                    ] else if (_tabController.index == 4) ...[
                       _buildPresetButton('Today'),
                       _buildPresetButton('Yesterday'),
+                      _buildPresetButton('This Week'),
                       _buildPresetButton('This Month'),
                       _buildSelectMonthDropdown(),
-                      _buildDatePicker('Start Date', _donationDateRange?.start, (date) {
+                      _buildDatePicker('Start Date', _adminPerfDateRange?.start, (date) {
                         setState(() {
-                          _donationDateRange = DateTimeRange(start: date, end: _donationDateRange?.end ?? date);
+                          _adminPerfDateRange = DateTimeRange(start: date, end: _adminPerfDateRange?.end ?? date);
                         });
                         _loadReportData();
                       }),
                       const Text('›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      _buildDatePicker('End Date', _donationDateRange?.end, (date) {
+                      _buildDatePicker('End Date', _adminPerfDateRange?.end, (date) {
                         setState(() {
-                          _donationDateRange = DateTimeRange(start: _donationDateRange?.start ?? date, end: date);
+                          _adminPerfDateRange = DateTimeRange(start: _adminPerfDateRange?.start ?? date, end: date);
                         });
                         _loadReportData();
                       }),
